@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Find Your Dream Job{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Find Your Perfect Career Match with AI</h1>
+            <p>Our AI-powered platform analyzes your skills, evaluates your resume, and matches you with opportunities
+                where you'll thrive.</p>
+            <div class="hero-buttons">
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-rocket"></i>
+                    Get Started Free
+                </a>
+                <a href="{{ url_for('jobs_bp.jobs_list') }}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-search"></i>
+                    Browse Jobs
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="container" style="padding: var(--space-16) 0;">
+    <div class="text-center mb-8">
+        <h2>Why Choose SkillMatch?</h2>
+        <p class="text-muted">Powered by AI to revolutionize your job search</p>
+    </div>
+
+    <div class="grid grid-cols-3 gap-6">
+        <a href="{% if current_user.is_authenticated %}{{ url_for('resume_analyze') }}{% else %}{{ url_for('register') }}{% endif %}"
+            class="card text-center p-6 feature-card"
+            style="text-decoration: none; transition: transform 0.3s, box-shadow 0.3s;">
+            <div class="stat-icon"
+                style="margin: 0 auto var(--space-4); width: 64px; height: 64px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-brain" style="font-size: 28px; color: white;"></i>
+            </div>
+            <h4 style="color: var(--dark);">AI Resume Analysis</h4>
+            <p class="text-muted">Get your resume scored instantly with detailed feedback on how to improve your
+                chances.</p>
+            <span class="btn btn-ghost btn-sm mt-2">Try Now →</span>
+        </a>
+
+        <a href="{{ url_for('jobs_bp.jobs_list') }}" class="card text-center p-6 feature-card"
+            style="text-decoration: none; transition: transform 0.3s, box-shadow 0.3s;">
+            <div class="stat-icon"
+                style="margin: 0 auto var(--space-4); width: 64px; height: 64px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-bullseye" style="font-size: 28px; color: white;"></i>
+            </div>
+            <h4 style="color: var(--dark);">Smart Job Matching</h4>
+            <p class="text-muted">Our AI matches your skills with job requirements to find the perfect opportunities.
+            </p>
+            <span class="btn btn-ghost btn-sm mt-2">Browse Jobs →</span>
+        </a>
+
+        <a href="{{ url_for('register') }}" class="card text-center p-6 feature-card"
+            style="text-decoration: none; transition: transform 0.3s, box-shadow 0.3s;">
+            <div class="stat-icon"
+                style="margin: 0 auto var(--space-4); width: 64px; height: 64px; background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-id-card" style="font-size: 28px; color: white;"></i>
+            </div>
+            <h4 style="color: var(--dark);">Face Recognition Login</h4>
+            <p class="text-muted">Secure your account with advanced facial recognition technology.</p>
+            <span class="btn btn-ghost btn-sm mt-2">Setup Now →</span>
+        </a>
+
+        <a href="{{ url_for('jobs_bp.jobs_list') }}" class="card text-center p-6 feature-card"
+            style="text-decoration: none; transition: transform 0.3s, box-shadow 0.3s;">
+            <div class="stat-icon"
+                style="margin: 0 auto var(--space-4); width: 64px; height: 64px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-file-pdf" style="font-size: 28px; color: white;"></i>
+            </div>
+            <h4 style="color: var(--dark);">Auto-Generated Letters</h4>
+            <p class="text-muted">Receive professional offer or feedback letters automatically when you apply.</p>
+            <span class="btn btn-ghost btn-sm mt-2">Apply for Jobs →</span>
+        </a>
+
+        <a href="{% if current_user.is_authenticated %}{{ url_for('social_bp.feed') }}{% else %}{{ url_for('register') }}{% endif %}"
+            class="card text-center p-6 feature-card"
+            style="text-decoration: none; transition: transform 0.3s, box-shadow 0.3s;">
+            <div class="stat-icon"
+                style="margin: 0 auto var(--space-4); width: 64px; height: 64px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-users" style="font-size: 28px; color: white;"></i>
+            </div>
+            <h4 style="color: var(--dark);">Professional Network</h4>
+            <p class="text-muted">Connect with professionals, share achievements, and grow your network.</p>
+            <span class="btn btn-ghost btn-sm mt-2">Join Network →</span>
+        </a>
+
+        <a href="{% if current_user.is_authenticated %}{{ url_for('resume_analyze') }}{% else %}{{ url_for('register') }}{% endif %}"
+            class="card text-center p-6 feature-card"
+            style="text-decoration: none; transition: transform 0.3s, box-shadow 0.3s;">
+            <div class="stat-icon"
+                style="margin: 0 auto var(--space-4); width: 64px; height: 64px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-chart-line" style="font-size: 28px; color: white;"></i>
+            </div>
+            <h4 style="color: var(--dark);">ATS Optimization</h4>
+            <p class="text-muted">Ensure your resume passes Applicant Tracking Systems with our scoring.</p>
+            <span class="btn btn-ghost btn-sm mt-2">Check Score →</span>
+        </a>
+    </div>
+</section>
+
+<style>
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<!-- Featured Jobs Section -->
+<section style="background: var(--gray-200); padding: var(--space-16) 0;">
+    <div class="container">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2>Featured Jobs</h2>
+                <p class="text-muted">Top opportunities from leading companies</p>
+            </div>
+            <a href="{{ url_for('jobs_bp.jobs_list') }}" class="btn btn-secondary">
+                View All Jobs <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+            {% for job in featured_jobs %}
+            <div class="card job-card">
+                <div class="card-body">
+                    <div class="flex gap-4">
+                        <div class="company-logo">
+                            {{ job.company[0] }}
+                        </div>
+                        <div class="flex-1">
+                            <h5 class="job-title">{{ job.title }}</h5>
+                            <p class="company-name">{{ job.company }}</p>
+                            <div class="job-meta">
+                                <span><i class="fas fa-map-marker-alt"></i> {{ job.location or 'Remote' }}</span>
+                                <span><i class="fas fa-briefcase"></i> {{ job.job_type or 'Full-time' }}</span>
+                                {% if job.salary_min %}
+                                <span><i class="fas fa-dollar-sign"></i> {{ '₹{:,}'.format(job.salary_min) }}{% if
+                                    job.salary_max %} - {{ '₹{:,}'.format(job.salary_max) }}{% endif %}</span>
+                                {% endif %}
+                            </div>
+                            <div class="job-tags">
+                                {% for skill in (job.skills_required | default('[]', true) | safe | replace("'", '"') |
+                                list)[:4] %}
+                                <span class="tag">{{ skill }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer flex justify-between items-center">
+                    <span class="text-muted text-sm">Posted {{ job.created_at.strftime('%b %d, %Y') if job.created_at
+                        else 'Recently' }}</span>
+                    <a href="{{ url_for('jobs_bp.job_detail', job_id=job.id) }}" class="btn btn-primary btn-sm">Apply
+                        Now</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="card p-6 text-center" style="grid-column: span 2;">
+                <i class="fas fa-briefcase"
+                    style="font-size: 48px; color: var(--gray-400); margin-bottom: var(--space-4);"></i>
+                <h4>No jobs posted yet</h4>
+                <p class="text-muted">Be the first to post a job opening!</p>
+                <a href="{{ url_for('register') }}" class="btn btn-primary mt-4">Register as Employer</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="container" style="padding: var(--space-16) 0;">
+    <div class="stats-grid">
+        <div class="stat-card card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3>10,000+</h3>
+            <p>Active Users</p>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: rgba(5, 118, 66, 0.1); color: var(--success);">
+                <i class="fas fa-briefcase"></i>
+            </div>
+            <h3>5,000+</h3>
+            <p>Jobs Posted</p>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: rgba(231, 163, 62, 0.1); color: var(--warning);">
+                <i class="fas fa-handshake"></i>
+            </div>
+            <h3>2,500+</h3>
+            <p>Successful Matches</p>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: rgba(102, 126, 234, 0.1); color: #667eea;">
+                <i class="fas fa-building"></i>
+            </div>
+            <h3>500+</h3>
+            <p>Companies</p>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section style="background: var(--gradient-hero); padding: var(--space-16) 0;">
+    <div class="container text-center">
+        <h2 style="color: white; margin-bottom: var(--space-4);">Ready to Transform Your Career?</h2>
+        <p style="color: rgba(255,255,255,0.9); font-size: var(--text-lg); margin-bottom: var(--space-8);">Join
+            thousands of professionals who found their dream jobs through SkillMatch</p>
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg"
+            style="background: white; color: var(--primary);">
+            Create Your Profile <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+</section>
+{% endblock %}

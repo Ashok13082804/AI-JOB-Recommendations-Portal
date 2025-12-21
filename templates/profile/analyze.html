@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume Analysis{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; padding: var(--space-8) var(--space-4);">
+    <div class="text-center mb-8">
+        <h1><i class="fas fa-file-pdf text-primary"></i> AI Resume Analysis</h1>
+        <p class="text-muted text-lg">Get instant ATS scoring and personalized improvement suggestions</p>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="card mb-6" id="upload-section">
+        <div class="card-body text-center" style="padding: var(--space-8);">
+            <div class="file-upload-area" id="drop-zone"
+                style="border: 3px dashed var(--gray-300); border-radius: var(--radius-xl); padding: var(--space-8); cursor: pointer; transition: all 0.3s;">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 64px; color: var(--primary);"></i>
+                <h4 class="mt-4">Upload Your Resume</h4>
+                <p class="text-muted">Drag & drop your PDF resume here, or click to browse</p>
+                <p class="text-sm text-muted">Supported format: PDF (Max 5MB)</p>
+                <input type="file" id="resume-input" accept=".pdf" style="display: none;">
+            </div>
+
+            {% if current_user.resume %}
+            <div class="mt-6 p-4" style="background: var(--gray-100); border-radius: var(--radius-lg);">
+                <p class="text-muted mb-2">Current Resume</p>
+                <div class="flex items-center justify-center gap-4">
+                    <i class="fas fa-file-pdf" style="font-size: 32px; color: #dc2626;"></i>
+                    <div>
+                        <p class="mb-0">Resume uploaded</p>
+                        <p class="text-sm text-muted mb-0">ATS Score: {{ current_user.resume.ats_score }}%</p>
+                    </div>
+                    <a href="{{ current_user.resume.file_path }}" class="btn btn-ghost btn-sm" target="_blank">View</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Analysis Results -->
+    <div id="analysis-results" class="hidden">
+        <div class="card mb-6">
+            <div class="card-body">
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="ats-score score-high" id="ats-score-circle"
+                            style="width: 150px; height: 150px; margin: 0 auto;">
+                            <svg viewBox="0 0 120 120">
+                                <circle class="bg" cx="60" cy="60" r="50"></circle>
+                                <circle class="progress" cx="60" cy="60" r="50" stroke-dasharray="314"
+                                    stroke-dashoffset="314" id="score-progress"></circle>
+                            </svg>
+                            <div class="score-text">
+                                <div class="score-number" id="score-number">0</div>
+                                <div class="score-label">ATS Score</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <h1 class="text-primary" id="skills-count">0</h1>
+                        <p class="text-muted">Skills Detected</p>
+                    </div>
+                    <div class="text-center">
+                        <h1 id="status-text" style="color: var(--success);">Good</h1>
+                        <p class="text-muted">Resume Status</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills Found -->
+        <div class="card mb-6">
+            <div class="card-header">
+                <h4><i class="fas fa-code text-success"></i> Skills Detected</h4>
+            </div>
+            <div class="card-body">
+                <div class="skills-grid" id="skills-list"></div>
+            </div>
+        </div>
+
+        <!-- Feedback -->
+        <div class="card mb-6">
+            <div class="card-header">
+                <h4><i class="fas fa-lightbulb text-warning"></i> Improvement Suggestions</h4>
+            </div>
+            <div class="card-body">
+                <ul class="feedback-list" id="feedback-list"></ul>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-center gap-4">
+            <button class="btn btn-primary btn-lg" onclick="document.getElementById('resume-input').click()">
+                <i class="fas fa-upload"></i> Upload Another
+            </button>
+            <a href="{{ url_for('jobs_bp.jobs_list') }}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-search"></i> Browse Matching Jobs
+            </a>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-section" class="hidden text-center" style="padding: var(--space-8);">
+        <div class="loader" style="width: 80px; height: 80px; margin: 0 auto;"></div>
+        <h4 class="mt-6">Analyzing Your Resume...</h4>
+        <p class="text-muted">Our AI is scanning for skills, experience, and ATS compatibility</p>
+    </div>
+</div>
+
+<style>
+    .file-upload-area:hover {
+        border-color: var(--primary);
+        background: rgba(10, 102, 194, 0.02);
+    }
+
+    .file-upload-area.dragover {
+        border-color: var(--primary);
+        background: rgba(10, 102, 194, 0.05);
+        transform: scale(1.02);
+    }
+
+    .feedback-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .feedback-list li {
+        padding: var(--space-3);
+        margin-bottom: var(--space-2);
+        background: var(--gray-100);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    .feedback-list li i {
+        color: var(--warning);
+    }
+</style>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const resumeInput = document.getElementById('resume-input');
+    const uploadSection = document.getElementById('upload-section');
+    const loadingSection = document.getElementById('loading-section');
+    const resultsSection = document.getElementById('analysis-results');
+
+    // Click to upload
+    dropZone.addEventListener('click', () => resumeInput.click());
+
+    // Drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            handleFileUpload(e.dataTransfer.files[0]);
+        }
+    });
+
+    resumeInput.addEventListener('change', () => {
+        if (resumeInput.files.length) {
+            handleFileUpload(resumeInput.files[0]);
+        }
+    });
+
+    async function handleFileUpload(file) {
+        if (!file.name.toLowerCase().endsWith('.pdf')) {
+            showToast('Please upload a PDF file', 'error');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('File too large. Max 5MB allowed', 'error');
+            return;
+        }
+
+        uploadSection.classList.add('hidden');
+        loadingSection.classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('resume', file);
+
+        try {
+            const response = await fetch('/resume/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            loadingSection.classList.add('hidden');
+
+            if (data.success) {
+                displayResults(data);
+            } else {
+                showToast(data.message || 'Error analyzing resume', 'error');
+                uploadSection.classList.remove('hidden');
+            }
+        } catch (error) {
+            loadingSection.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+            showToast('Error uploading file', 'error');
+        }
+    }
+
+    function displayResults(data) {
+        resultsSection.classList.remove('hidden');
+
+        const score = data.ats_score;
+        const scoreCircle = document.getElementById('ats-score-circle');
+        const scoreProgress = document.getElementById('score-progress');
+        const scoreNumber = document.getElementById('score-number');
+
+        // Set score class
+        scoreCircle.className = 'ats-score ' + (score >= 70 ? 'score-high' : score >= 50 ? 'score-medium' : 'score-low');
+
+        // Animate score
+        let currentScore = 0;
+        const interval = setInterval(() => {
+            if (currentScore >= score) {
+                clearInterval(interval);
+                return;
+            }
+            currentScore++;
+            scoreNumber.textContent = currentScore;
+            scoreProgress.style.strokeDashoffset = 314 - (314 * currentScore / 100);
+        }, 20);
+
+        // Skills count
+        document.getElementById('skills-count').textContent = data.skills.length;
+
+        // Status text
+        const statusText = document.getElementById('status-text');
+        if (score >= 70) {
+            statusText.textContent = 'Excellent';
+            statusText.style.color = 'var(--success)';
+        } else if (score >= 50) {
+            statusText.textContent = 'Good';
+            statusText.style.color = 'var(--warning)';
+        } else {
+            statusText.textContent = 'Needs Work';
+            statusText.style.color = 'var(--error)';
+        }
+
+        // Skills list
+        const skillsList = document.getElementById('skills-list');
+        skillsList.innerHTML = data.skills.map(skill =>
+            `<span class="skill-badge">${skill}</span>`
+        ).join('');
+
+        // Feedback
+        const feedbackList = document.getElementById('feedback-list');
+        feedbackList.innerHTML = (data.feedback || []).map(item =>
+            `<li><i class="fas fa-exclamation-circle"></i> ${item}</li>`
+        ).join('');
+
+        if (!data.feedback || data.feedback.length === 0) {
+            feedbackList.innerHTML = '<li><i class="fas fa-check-circle" style="color: var(--success);"></i> Your resume looks great! No major issues found.</li>';
+        }
+    }
+</script>
+{% endblock %}

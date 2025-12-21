@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: var(--space-12) 0;">
+    <div class="card" style="max-width: 450px; margin: 0 auto;">
+        <div class="card-header text-center">
+            <h3><i class="fas fa-sign-in-alt"></i> Welcome Back</h3>
+            <p class="text-muted">Login to your SkillMatch account</p>
+        </div>
+
+        <div class="card-body">
+            <!-- Login Tab Options -->
+            <div class="login-tabs flex mb-6">
+                <button type="button" class="login-tab active" data-tab="password">
+                    <i class="fas fa-key"></i> Password
+                </button>
+                <button type="button" class="login-tab" data-tab="face">
+                    <i class="fas fa-user-circle"></i> Face Login
+                </button>
+            </div>
+
+            <style>
+                .login-tabs {
+                    border-radius: var(--radius-lg);
+                    background: var(--gray-100);
+                    padding: 4px;
+                }
+
+                .login-tab {
+                    flex: 1;
+                    padding: var(--space-3);
+                    border: none;
+                    background: none;
+                    border-radius: var(--radius-md);
+                    cursor: pointer;
+                    font-weight: 500;
+                    color: var(--gray-600);
+                    transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: var(--space-2);
+                }
+
+                .login-tab.active {
+                    background: var(--white);
+                    color: var(--primary);
+                    box-shadow: var(--shadow-sm);
+                }
+            </style>
+
+            <!-- Password Login Form -->
+            <div class="login-panel" id="password-panel">
+                <form id="password-login-form">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-input" placeholder="your@email.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div style="position: relative;">
+                            <input type="password" name="password" class="form-input" placeholder="Enter your password"
+                                required id="password-input">
+                            <button type="button" class="toggle-password" onclick="togglePassword()"
+                                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--gray-500);">
+                                <i class="fas fa-eye" id="password-toggle-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-6">
+                        <label class="flex items-center gap-2" style="cursor: pointer;">
+                            <input type="checkbox" name="remember">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="#" class="text-primary text-sm">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full btn-lg">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </form>
+            </div>
+
+            <!-- Face Login Panel -->
+            <div class="login-panel hidden" id="face-panel">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="face-email" class="form-input" placeholder="your@email.com" required>
+                </div>
+
+                <div class="webcam-container mb-6">
+                    <video id="face-webcam" autoplay playsinline></video>
+                    <canvas id="face-login-canvas" style="display: none;"></canvas>
+                    <div class="webcam-overlay"></div>
+                    <div class="face-status" id="face-login-status">Position your face in the circle</div>
+                </div>
+
+                <button type="button" id="face-login-btn" class="btn btn-primary w-full btn-lg" onclick="faceLogin()">
+                    <i class="fas fa-camera"></i> Verify Face & Login
+                </button>
+
+                <div class="alert alert-info mt-4">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Make sure you're in a well-lit area and facing the camera directly.</span>
+                </div>
+            </div>
+
+            <div id="login-error" class="alert alert-error hidden mt-4"></div>
+            <div id="login-success" class="alert alert-success hidden mt-4"></div>
+        </div>
+
+        <div class="card-footer text-center">
+            <p class="mb-4">Or continue with</p>
+            <div class="flex gap-4 justify-center mb-4">
+                <button class="btn btn-ghost btn-icon" title="Google">
+                    <i class="fab fa-google"></i>
+                </button>
+                <button class="btn btn-ghost btn-icon" title="LinkedIn">
+                    <i class="fab fa-linkedin"></i>
+                </button>
+                <button class="btn btn-ghost btn-icon" title="GitHub">
+                    <i class="fab fa-github"></i>
+                </button>
+            </div>
+            <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script src="{{ url_for('static', filename='js/face-recognition.js') }}"></script>
+<script>
+    // Tab switching
+    document.querySelectorAll('.login-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+            document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            const tabName = this.dataset.tab;
+            document.querySelectorAll('.login-panel').forEach(panel => panel.classList.add('hidden'));
+            document.getElementById(`${tabName}-panel`).classList.remove('hidden');
+
+            // Start webcam for face login
+            if (tabName === 'face') {
+                startWebcam('face-webcam');
+            } else {
+                stopWebcam();
+            }
+        });
+    });
+
+    // Toggle password visibility
+    function togglePassword() {
+        const input = document.getElementById('password-input');
+        const icon = document.getElementById('password-toggle-icon');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    // Password login
+    document.getElementById('password-login-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const formData = {
+            email: this.email.value,
+            password: this.password.value
+        };
+
+        try {
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('login-success').textContent = 'Login successful! Redirecting...';
+                document.getElementById('login-success').classList.remove('hidden');
+                document.getElementById('login-error').classList.add('hidden');
+                setTimeout(() => window.location.href = data.redirect, 1000);
+            } else {
+                document.getElementById('login-error').textContent = data.message;
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        } catch (error) {
+            document.getElementById('login-error').textContent = 'An error occurred. Please try again.';
+            document.getElementById('login-error').classList.remove('hidden');
+        }
+    });
+
+    // Face login function
+    async function faceLogin() {
+        const email = document.getElementById('face-email').value;
+
+        if (!email) {
+            document.getElementById('login-error').textContent = 'Please enter your email address';
+            document.getElementById('login-error').classList.remove('hidden');
+            return;
+        }
+
+        const video = document.getElementById('face-webcam');
+        const canvas = document.getElementById('face-login-canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        const faceData = canvas.toDataURL('image/jpeg');
+
+        document.getElementById('face-login-status').textContent = 'Verifying...';
+
+        try {
+            const response = await fetch('/login/face', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: email,
+                    face_encoding: faceData
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('face-login-status').textContent = 'Verified!';
+                document.getElementById('login-success').textContent = 'Face verified! Redirecting...';
+                document.getElementById('login-success').classList.remove('hidden');
+                setTimeout(() => window.location.href = data.redirect, 1000);
+            } else {
+                document.getElementById('face-login-status').textContent = 'Verification failed';
+                document.getElementById('login-error').textContent = data.message;
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        } catch (error) {
+            document.getElementById('login-error').textContent = 'An error occurred. Please try again.';
+            document.getElementById('login-error').classList.remove('hidden');
+        }
+    }
+</script>
+{% endblock %}

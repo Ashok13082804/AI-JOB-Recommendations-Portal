@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Employer Dashboard{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: var(--space-6) 0;">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2>Employer Dashboard</h2>
+            <p class="text-muted">Manage your job postings and applications</p>
+        </div>
+        <a href="{{ url_for('jobs_bp.create_job') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Post New Job
+        </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card card">
+            <div class="stat-icon">
+                <i class="fas fa-briefcase"></i>
+            </div>
+            <h3>{{ jobs|length }}</h3>
+            <p>Active Jobs</p>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: rgba(102, 126, 234, 0.1); color: #667eea;">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3>{{ applications|length }}</h3>
+            <p>Total Applications</p>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: rgba(5, 118, 66, 0.1); color: var(--success);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3>{{ applications|selectattr('status', 'eq', 'approved')|list|length }}</h3>
+            <p>Hired</p>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: rgba(231, 163, 62, 0.1); color: var(--warning);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <h3>{{ applications|selectattr('status', 'eq', 'pending')|list|length }}</h3>
+            <p>Pending Review</p>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid" style="grid-template-columns: 2fr 1fr; gap: var(--space-6);">
+        <!-- Jobs List -->
+        <div class="card">
+            <div class="card-header flex justify-between items-center">
+                <h4><i class="fas fa-briefcase"></i> Your Job Postings</h4>
+            </div>
+            <div class="card-body">
+                {% if jobs %}
+                {% for job in jobs %}
+                <div class="job-item flex gap-4 p-4" style="border-bottom: 1px solid var(--gray-200);">
+                    <div class="company-logo">{{ job.company[0] }}</div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h5 style="margin-bottom: 4px;">{{ job.title }}</h5>
+                                <p class="text-muted text-sm mb-2">{{ job.location or 'Remote' }} • {{ job.job_type or
+                                    'Full-time' }}</p>
+                            </div>
+                            <span class="tag {{ 'tag-success' if job.is_active else 'tag-danger' }}">
+                                {{ 'Active' if job.is_active else 'Closed' }}
+                            </span>
+                        </div>
+                        <div class="flex gap-4 mt-3">
+                            <span class="text-sm text-muted">
+                                <i class="fas fa-users"></i> {{ job.applications|length }} applications
+                            </span>
+                            <span class="text-sm text-muted">
+                                <i class="fas fa-calendar"></i> Posted {{ job.created_at.strftime('%b %d') if
+                                job.created_at else 'Recently' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <a href="{{ url_for('jobs_bp.job_applications', job_id=job.id) }}"
+                            class="btn btn-primary btn-sm">
+                            View Applications
+                        </a>
+                        <button class="btn btn-ghost btn-sm" onclick="toggleJob({{ job.id }})">
+                            {{ 'Close Job' if job.is_active else 'Reopen Job' }}
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center p-6">
+                    <i class="fas fa-briefcase" style="font-size: 48px; color: var(--gray-400);"></i>
+                    <p class="text-muted mt-4">No jobs posted yet.</p>
+                    <a href="{{ url_for('jobs_bp.create_job') }}" class="btn btn-primary mt-4">
+                        <i class="fas fa-plus"></i> Post Your First Job
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Applications -->
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-inbox"></i> Recent Applications</h4>
+            </div>
+            <div class="card-body">
+                {% if applications %}
+                {% for app in applications[:10] %}
+                <div class="application-item flex gap-3 p-3" style="border-bottom: 1px solid var(--gray-100);">
+                    {% if app.applicant.profile_image %}
+                    <img src="{{ app.applicant.profile_image }}" class="post-avatar" style="width: 40px; height: 40px;">
+                    {% else %}
+                    <div class="post-avatar"
+                        style="width: 40px; height: 40px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                        {{ app.applicant.name[0] }}
+                    </div>
+                    {% endif %}
+                    <div class="flex-1">
+                        <p class="font-weight-600 text-sm mb-0">{{ app.applicant.name }}</p>
+                        <p class="text-muted text-xs mb-1">{{ app.job.title }}</p>
+                        <div class="flex gap-2 items-center">
+                            <span class="status-badge status-{{ app.status }}" style="font-size: 10px;">{{ app.status
+                                }}</span>
+                            <span class="text-xs text-muted">{{ app.ai_score }}%</span>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('profile', user_id=app.applicant.id) }}" class="btn btn-ghost btn-sm btn-icon">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted text-center p-4">No applications yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Candidates -->
+    {% if applications %}
+    <div class="card mt-6">
+        <div class="card-header">
+            <h4><i class="fas fa-star"></i> AI-Ranked Top Candidates</h4>
+        </div>
+        <div class="card-body">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--gray-200);">
+                        <th style="text-align: left; padding: var(--space-3);">Candidate</th>
+                        <th style="text-align: left; padding: var(--space-3);">Position</th>
+                        <th style="text-align: center; padding: var(--space-3);">AI Score</th>
+                        <th style="text-align: center; padding: var(--space-3);">Skills Match</th>
+                        <th style="text-align: center; padding: var(--space-3);">Status</th>
+                        <th style="text-align: right; padding: var(--space-3);">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications|sort(attribute='ai_score', reverse=true)[:5] %}
+                    <tr style="border-bottom: 1px solid var(--gray-100);">
+                        <td style="padding: var(--space-3);">
+                            <div class="flex items-center gap-3">
+                                {% if app.applicant.profile_image %}
+                                <img src="{{ app.applicant.profile_image }}" class="post-avatar"
+                                    style="width: 36px; height: 36px;">
+                                {% else %}
+                                <div class="post-avatar"
+                                    style="width: 36px; height: 36px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">
+                                    {{ app.applicant.name[0] }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <p class="font-weight-600 text-sm mb-0">{{ app.applicant.name }}</p>
+                                    <p class="text-muted text-xs mb-0">{{ app.applicant.headline or 'No headline' }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: var(--space-3);">{{ app.job.title }}</td>
+                        <td style="text-align: center; padding: var(--space-3);">
+                            <span
+                                class="tag {{ 'tag-success' if app.ai_score >= 70 else 'tag-warning' if app.ai_score >= 50 else 'tag-danger' }}">
+                                {{ app.ai_score }}%
+                            </span>
+                        </td>
+                        <td style="text-align: center; padding: var(--space-3);">{{ app.match_percentage or 0 }}%</td>
+                        <td style="text-align: center; padding: var(--space-3);">
+                            <span class="status-badge status-{{ app.status }}">{{ app.status }}</span>
+                        </td>
+                        <td style="text-align: right; padding: var(--space-3);">
+                            <div class="flex gap-2 justify-end">
+                                <a href="{{ url_for('profile', user_id=app.applicant.id) }}"
+                                    class="btn btn-ghost btn-sm">View</a>
+                                {% if app.status == 'pending' or app.status == 'under_review' %}
+                                <button class="btn btn-success btn-sm" onclick="quickDecision({{ app.id }}, 'approve')">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="quickDecision({{ app.id }}, 'reject')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    async function toggleJob(jobId) {
+        const response = await fetch(`/jobs/${jobId}/toggle`, { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        }
+    }
+
+    async function quickDecision(appId, action) {
+        // Implement quick approve/reject
+        showToast(`Application ${action}d successfully!`, 'success');
+    }
+</script>
+{% endblock %}

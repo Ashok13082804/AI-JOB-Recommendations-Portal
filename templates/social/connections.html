@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Connections{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; padding: var(--space-6) var(--space-4);">
+    <h2 class="mb-6">My Network</h2>
+
+    <!-- Pending Requests -->
+    {% if pending %}
+    <div class="card mb-6">
+        <div class="card-header">
+            <h4><i class="fas fa-user-plus"></i> Pending Requests ({{ pending|length }})</h4>
+        </div>
+        <div class="card-body">
+            {% for conn in pending %}
+            {% set user = conn.user_id %}
+            <div class="flex gap-4 items-center mb-4 pb-4" style="border-bottom: 1px solid var(--gray-200);">
+                <div class="post-avatar"
+                    style="background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                    ?
+                </div>
+                <div class="flex-1">
+                    <h5 class="mb-0">User {{ conn.user_id }}</h5>
+                    <p class="text-muted text-sm mb-0">Wants to connect</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn btn-primary btn-sm" onclick="acceptConnection({{ conn.id }})">
+                        <i class="fas fa-check"></i> Accept
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="rejectConnection({{ conn.id }})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- My Connections -->
+    <div class="card">
+        <div class="card-header">
+            <h4><i class="fas fa-users"></i> Connections ({{ connections|length }})</h4>
+        </div>
+        <div class="card-body">
+            {% if connections %}
+            <div class="grid grid-cols-2 gap-4">
+                {% for conn in connections %}
+                <div class="card p-4">
+                    <div class="flex gap-3">
+                        <div class="post-avatar"
+                            style="background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                            C
+                        </div>
+                        <div class="flex-1">
+                            <h6 class="mb-0">Connection</h6>
+                            <p class="text-muted text-sm mb-2">Member</p>
+                            <button class="btn btn-ghost btn-sm">Message</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center p-6">
+                <i class="fas fa-user-friends" style="font-size: 64px; color: var(--gray-300);"></i>
+                <h4 class="mt-4">No connections yet</h4>
+                <p class="text-muted">Start building your network!</p>
+                <a href="{{ url_for('social_bp.feed') }}" class="btn btn-primary mt-4">
+                    Explore Feed
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    async function acceptConnection(connId) {
+        const response = await fetch(`/social/connection/${connId}/accept`, { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            showToast('Connection accepted!', 'success');
+            location.reload();
+        }
+    }
+
+    async function rejectConnection(connId) {
+        const response = await fetch(`/social/connection/${connId}/reject`, { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        }
+    }
+</script>
+{% endblock %}

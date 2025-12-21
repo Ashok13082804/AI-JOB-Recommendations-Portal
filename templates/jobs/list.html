@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}Browse Jobs{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: var(--space-6) var(--space-4);">
+    <!-- Search Header -->
+    <div class="card mb-6" style="background: var(--gradient-hero);">
+        <div class="card-body" style="padding: var(--space-8);">
+            <h2 style="color: white; text-align: center; margin-bottom: var(--space-6);">Find Your Dream Job</h2>
+            <form class="flex gap-4" method="GET" action="{{ url_for('jobs_bp.jobs_list') }}">
+                <div class="flex-1">
+                    <input type="text" name="search" class="form-input"
+                        placeholder="Job title, skills, or company (e.g., Python, React, Data Analyst)"
+                        value="{{ search }}" style="padding: var(--space-4);">
+                </div>
+                <div style="width: 200px;">
+                    <input type="text" name="location" class="form-input" placeholder="Location" value="{{ location }}"
+                        style="padding: var(--space-4);">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" style="background: white; color: var(--primary);">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+            {% if current_user.is_authenticated and current_user.role == 'seeker' %}
+            <p
+                style="color: rgba(255,255,255,0.8); text-align: center; margin-top: var(--space-4); margin-bottom: 0; font-size: var(--text-sm);">
+                <i class="fas fa-magic"></i> Jobs are ranked based on your skills match!
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 250px 1fr; gap: var(--space-6);">
+        <!-- Filters Sidebar -->
+        <aside>
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-filter"></i> Filters</h5>
+                </div>
+                <form method="GET" action="{{ url_for('jobs_bp.jobs_list') }}">
+                    <input type="hidden" name="search" value="{{ search }}">
+                    <input type="hidden" name="location" value="{{ location }}">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Job Type</label>
+                            <select name="job_type" class="form-select">
+                                <option value="">Any</option>
+                                <option value="full-time" {{ 'selected' if job_type=='full-time' }}>Full-time</option>
+                                <option value="part-time" {{ 'selected' if job_type=='part-time' }}>Part-time</option>
+                                <option value="contract" {{ 'selected' if job_type=='contract' }}>Contract</option>
+                                <option value="remote" {{ 'selected' if job_type=='remote' }}>Remote</option>
+                                <option value="internship" {{ 'selected' if job_type=='internship' }}>Internship
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Experience Level</label>
+                            <select name="experience" class="form-select">
+                                <option value="">Any</option>
+                                <option value="0">Fresher (0-1 years)</option>
+                                <option value="2">Junior (2-4 years)</option>
+                                <option value="5">Mid-level (5-7 years)</option>
+                                <option value="8">Senior (8+ years)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-full">Apply Filters</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Popular Searches -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-fire"></i> Popular Searches</h6>
+                </div>
+                <div class="card-body">
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ url_for('jobs_bp.jobs_list', search='Python') }}" class="tag">Python</a>
+                        <a href="{{ url_for('jobs_bp.jobs_list', search='React') }}" class="tag">React</a>
+                        <a href="{{ url_for('jobs_bp.jobs_list', search='JavaScript') }}" class="tag">JavaScript</a>
+                        <a href="{{ url_for('jobs_bp.jobs_list', search='Machine Learning') }}" class="tag">ML</a>
+                        <a href="{{ url_for('jobs_bp.jobs_list', search='AWS') }}" class="tag">AWS</a>
+                        <a href="{{ url_for('jobs_bp.jobs_list', search='Data') }}" class="tag">Data</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Jobs List -->
+        <main>
+            <div class="flex justify-between items-center mb-4">
+                <p class="text-muted mb-0">
+                    <strong>{{ jobs|length }}</strong> jobs found
+                    {% if search %} for "<strong>{{ search }}</strong>"{% endif %}
+                </p>
+                <div class="flex items-center gap-2">
+                    {% if current_user.is_authenticated and current_user.role == 'seeker' %}
+                    <span class="tag tag-success"><i class="fas fa-magic"></i> AI Sorted</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% for job in jobs %}
+            <div class="card job-card mb-4"
+                style="transition: all 0.3s; border-left: 4px solid {% if job.match_score is defined and job.match_score >= 70 %}var(--success){% elif job.match_score is defined and job.match_score >= 40 %}var(--warning){% else %}var(--gray-300){% endif %};">
+                <div class="card-body">
+                    <div class="flex gap-4">
+                        <div class="company-logo">{{ job.company[0] if job.company else 'C' }}</div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <a href="{{ url_for('jobs_bp.job_detail', job_id=job.id) }}">
+                                        <h4 class="job-title">{{ job.title }}</h4>
+                                    </a>
+                                    <p class="company-name">{{ job.company }}</p>
+                                </div>
+                                <div class="flex gap-2 items-center">
+                                    {% if job.match_score is defined and current_user.is_authenticated %}
+                                    <div class="match-badge"
+                                        style="background: {% if job.match_score >= 70 %}rgba(5, 118, 66, 0.1){% elif job.match_score >= 40 %}rgba(231, 163, 62, 0.1){% else %}rgba(128,128,128,0.1){% endif %}; color: {% if job.match_score >= 70 %}var(--success){% elif job.match_score >= 40 %}var(--warning){% else %}var(--gray-500){% endif %}; padding: 4px 12px; border-radius: 20px; font-weight: 600; font-size: 12px;">
+                                        <i class="fas fa-bullseye"></i> {{ job.match_score }}% Match
+                                    </div>
+                                    {% endif %}
+                                    {% if current_user.is_authenticated %}
+                                    <button class="btn btn-icon btn-ghost" title="Save Job"
+                                        onclick="saveJob({{ job.id }})">
+                                        <i class="far fa-bookmark"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="job-meta">
+                                <span><i class="fas fa-map-marker-alt"></i> {{ job.location or 'Remote' }}</span>
+                                <span><i class="fas fa-briefcase"></i> {{ job.job_type or 'Full-time' }}</span>
+                                <span><i class="fas fa-clock"></i> {{ job.experience_min or 0 }}{% if job.experience_max
+                                    %}-{{ job.experience_max }}{% endif %} years</span>
+                                {% if job.salary_min %}
+                                <span><i class="fas fa-rupee-sign"></i> ₹{{ '{:,}'.format(job.salary_min // 100000)
+                                    }}L{% if job.salary_max %} - ₹{{ '{:,}'.format(job.salary_max // 100000) }}L{% endif
+                                    %}</span>
+                                {% endif %}
+                            </div>
+
+                            <p class="text-muted mt-3 mb-0" style="font-size: var(--text-sm);">
+                                {{ job.description[:150] }}{% if job.description|length > 150 %}...{% endif %}
+                            </p>
+
+                            <div class="job-tags mt-3">
+                                {% if job.skills_required %}
+                                {% for skill in job.skills_required | from_json %}
+                                <span class="tag" style="font-size: 11px;">{{ skill }}</span>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer flex justify-between items-center">
+                    <span class="text-muted text-sm">
+                        <i class="fas fa-clock"></i> Posted {{ job.created_at.strftime('%b %d, %Y') if job.created_at
+                        else 'Recently' }}
+                    </span>
+                    <a href="{{ url_for('jobs_bp.job_detail', job_id=job.id) }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i> View & Apply
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="card text-center p-6">
+                <i class="fas fa-search" style="font-size: 64px; color: var(--gray-300);"></i>
+                <h4 class="mt-4">No jobs found</h4>
+                <p class="text-muted">Try a different search term or adjust filters</p>
+                <a href="{{ url_for('jobs_bp.jobs_list') }}" class="btn btn-primary mt-4">
+                    <i class="fas fa-list"></i> View All Jobs
+                </a>
+            </div>
+            {% endfor %}
+        </main>
+    </div>
+</div>
+
+<script>
+    function saveJob(jobId) {
+        showToast('Job saved to your list!', 'success');
+    }
+</script>
+{% endblock %}

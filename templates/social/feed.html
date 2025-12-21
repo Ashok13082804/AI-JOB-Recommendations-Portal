@@ -1,0 +1,334 @@
+{% extends 'base.html' %}
+
+{% block title %}Feed{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid container" style="padding: var(--space-6) 0;">
+    <!-- Left Sidebar -->
+    <aside class="dashboard-sidebar">
+        <div class="card">
+            <div style="padding: var(--space-4); text-align: center; border-bottom: 1px solid var(--gray-200);">
+                {% if current_user.profile_image %}
+                <img src="{{ current_user.profile_image }}" alt="{{ current_user.name }}"
+                    style="width: 60px; height: 60px; border-radius: 50%; margin: 0 auto;">
+                {% else %}
+                <div
+                    style="width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 600; margin: 0 auto;">
+                    {{ current_user.name[0] }}
+                </div>
+                {% endif %}
+                <h5 class="mt-3 mb-1">{{ current_user.name }}</h5>
+                <p class="text-muted text-sm mb-0">{{ current_user.headline or 'Add headline' }}</p>
+            </div>
+            <div class="p-4">
+                <a href="{{ url_for('profile') }}" class="btn btn-secondary btn-sm w-full">View Profile</a>
+            </div>
+        </div>
+
+        <!-- Connections -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">My Network</h6>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('social_bp.connections_list') }}"
+                    class="flex justify-between items-center text-muted">
+                    <span>Connections</span>
+                    <span class="text-primary">0</span>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Feed -->
+    <main class="dashboard-main">
+        <!-- Create Post -->
+        <div class="card mb-6">
+            <div class="card-body">
+                <div class="flex gap-4">
+                    {% if current_user.profile_image %}
+                    <img src="{{ current_user.profile_image }}" class="post-avatar">
+                    {% else %}
+                    <div class="post-avatar"
+                        style="background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                        {{ current_user.name[0] }}
+                    </div>
+                    {% endif %}
+                    <button class="form-input text-left text-muted" style="cursor: pointer;"
+                        onclick="openModal('create-post-modal')">
+                        Start a post...
+                    </button>
+                </div>
+                <div class="flex gap-4 mt-4 pt-4" style="border-top: 1px solid var(--gray-200);">
+                    <button class="btn btn-ghost flex-1" onclick="openModal('create-post-modal')">
+                        <i class="fas fa-image text-primary"></i> Photo
+                    </button>
+                    <button class="btn btn-ghost flex-1" onclick="openModal('create-post-modal')">
+                        <i class="fas fa-briefcase text-success"></i> Job Update
+                    </button>
+                    <button class="btn btn-ghost flex-1" onclick="openModal('create-post-modal')">
+                        <i class="fas fa-trophy text-warning"></i> Achievement
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts Feed -->
+        {% for post in posts %}
+        <div class="card post-card mb-4">
+            <div class="card-body">
+                <div class="post-header">
+                    {% if post.author.profile_image %}
+                    <img src="{{ post.author.profile_image }}" class="post-avatar">
+                    {% else %}
+                    <div class="post-avatar"
+                        style="background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                        {{ post.author.name[0] }}
+                    </div>
+                    {% endif %}
+                    <div>
+                        <a href="{{ url_for('profile', user_id=post.author.id) }}" class="post-author">{{
+                            post.author.name }}</a>
+                        <p class="text-muted text-sm mb-0">{{ post.author.headline or '' }}</p>
+                        <p class="post-time">{{ post.created_at.strftime('%b %d, %Y') if post.created_at else '' }}</p>
+                    </div>
+                </div>
+
+                <div class="post-content">
+                    {{ post.content }}
+                </div>
+
+                {% if post.image_url %}
+                <img src="{{ post.image_url }}"
+                    style="width: 100%; border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                {% endif %}
+
+                <div class="post-actions">
+                    <button
+                        class="post-action {{ 'liked' if current_user.id in post.likes|map(attribute='user_id')|list }}"
+                        onclick="likePost({{ post.id }}, this)">
+                        <i class="fas fa-heart"></i>
+                        <span class="like-count">{{ post.likes|length }}</span> Likes
+                    </button>
+                    <button class="post-action" onclick="toggleComments({{ post.id }})">
+                        <i class="fas fa-comment"></i>
+                        <span>{{ post.comments|length }}</span> Comments
+                    </button>
+                    <button class="post-action">
+                        <i class="fas fa-share"></i>
+                        Share
+                    </button>
+                </div>
+
+                <!-- Comments Section -->
+                <div class="comments-section hidden mt-4 pt-4" id="comments-{{ post.id }}"
+                    style="border-top: 1px solid var(--gray-200);">
+                    {% for comment in post.comments[:3] %}
+                    <div class="flex gap-3 mb-3">
+                        <div class="post-avatar"
+                            style="width: 32px; height: 32px; background: var(--gray-200); font-size: 12px; display: flex; align-items: center; justify-content: center;">
+                            {{ comment.user.name[0] }}
+                        </div>
+                        <div class="flex-1 p-3" style="background: var(--gray-100); border-radius: var(--radius-lg);">
+                            <p class="text-sm font-weight-600 mb-1">{{ comment.user.name }}</p>
+                            <p class="text-sm mb-0">{{ comment.content }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="flex gap-3 mt-3">
+                        <div class="post-avatar"
+                            style="width: 32px; height: 32px; background: var(--primary); color: white; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+                            {{ current_user.name[0] }}
+                        </div>
+                        <div class="flex-1">
+                            <input type="text" class="form-input" placeholder="Add a comment..."
+                                onkeydown="if(event.key === 'Enter') addComment({{ post.id }}, this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card text-center p-6">
+            <i class="fas fa-newspaper" style="font-size: 64px; color: var(--gray-300);"></i>
+            <h4 class="mt-4">No posts yet</h4>
+            <p class="text-muted">Be the first to share something!</p>
+            <button class="btn btn-primary mt-4" onclick="openModal('create-post-modal')">
+                <i class="fas fa-plus"></i> Create Post
+            </button>
+        </div>
+        {% endfor %}
+    </main>
+
+    <!-- Right Sidebar -->
+    <aside class="dashboard-sidebar">
+        <!-- Connection Suggestions -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">People You May Know</h6>
+            </div>
+            <div class="card-body">
+                {% for user in suggestions %}
+                <div class="flex gap-3 mb-4">
+                    {% if user.profile_image %}
+                    <img src="{{ user.profile_image }}" style="width: 48px; height: 48px; border-radius: 50%;">
+                    {% else %}
+                    <div
+                        style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                        {{ user.name[0] }}
+                    </div>
+                    {% endif %}
+                    <div class="flex-1">
+                        <a href="{{ url_for('profile', user_id=user.id) }}" class="font-weight-600 text-sm">{{ user.name
+                            }}</a>
+                        <p class="text-muted text-xs mb-2">{{ user.headline or 'Member' }}</p>
+                        <button class="btn btn-secondary btn-sm" onclick="sendConnection({{ user.id }})">
+                            <i class="fas fa-user-plus"></i> Connect
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-sm">No suggestions yet</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Trending Skills -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-fire text-warning"></i> Trending Skills</h6>
+            </div>
+            <div class="card-body">
+                <div class="skills-grid">
+                    {% for skill in trending_skills %}
+                    <span class="tag">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<!-- Create Post Modal -->
+<div class="modal-overlay" id="create-post-modal">
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>Create a Post</h3>
+            <button class="modal-close" onclick="closeModal('create-post-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="flex gap-3 mb-4">
+                {% if current_user.profile_image %}
+                <img src="{{ current_user.profile_image }}" class="post-avatar">
+                {% else %}
+                <div class="post-avatar"
+                    style="background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                    {{ current_user.name[0] }}
+                </div>
+                {% endif %}
+                <div>
+                    <p class="font-weight-600 mb-0">{{ current_user.name }}</p>
+                    <select class="form-select" style="width: auto; padding: 4px 8px; font-size: 12px;">
+                        <option value="public">🌍 Anyone</option>
+                        <option value="connections">👥 Connections only</option>
+                    </select>
+                </div>
+            </div>
+            <textarea id="post-content" class="form-textarea" rows="6" placeholder="What do you want to talk about?"
+                style="border: none; resize: none;"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('create-post-modal')">Cancel</button>
+            <button class="btn btn-primary" onclick="createPost()">
+                <i class="fas fa-paper-plane"></i> Post
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function createPost() {
+        const content = document.getElementById('post-content').value;
+
+        if (!content.trim()) {
+            showToast('Please write something', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/social/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, post_type: 'text' })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('Post created!', 'success');
+                closeModal('create-post-modal');
+                location.reload();
+            }
+        } catch (error) {
+            showToast('Error creating post', 'error');
+        }
+    }
+
+    async function likePost(postId, btn) {
+        try {
+            const response = await fetch(`/social/post/${postId}/like`, { method: 'POST' });
+            const data = await response.json();
+
+            if (data.success) {
+                btn.classList.toggle('liked', data.liked);
+                btn.querySelector('.like-count').textContent = data.likes_count;
+            }
+        } catch (error) {
+            console.error('Error liking post');
+        }
+    }
+
+    function toggleComments(postId) {
+        const comments = document.getElementById(`comments-${postId}`);
+        comments.classList.toggle('hidden');
+    }
+
+    async function addComment(postId, input) {
+        const content = input.value.trim();
+        if (!content) return;
+
+        try {
+            const response = await fetch(`/social/post/${postId}/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                input.value = '';
+                location.reload();
+            }
+        } catch (error) {
+            showToast('Error adding comment', 'error');
+        }
+    }
+
+    async function sendConnection(userId) {
+        try {
+            const response = await fetch(`/social/connect/${userId}`, { method: 'POST' });
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('Connection request sent!', 'success');
+            } else {
+                showToast(data.message, 'error');
+            }
+        } catch (error) {
+            showToast('Error sending request', 'error');
+        }
+    }
+</script>
+{% endblock %}

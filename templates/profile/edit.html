@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; padding: var(--space-8) var(--space-4);">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-user-edit"></i> Edit Profile</h3>
+        </div>
+
+        <form action="{{ url_for('edit_profile') }}" method="POST" enctype="multipart/form-data">
+            <div class="card-body">
+                <!-- Profile Image -->
+                <div class="form-group text-center">
+                    <div style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
+                        {% if current_user.profile_image %}
+                        <img src="{{ current_user.profile_image }}" id="profile-preview"
+                            style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary);">
+                        {% else %}
+                        <div id="profile-preview"
+                            style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 700;">
+                            {{ current_user.name[0] }}
+                        </div>
+                        {% endif %}
+                        <label
+                            style="position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                            <i class="fas fa-camera"></i>
+                            <input type="file" name="profile_image" accept="image/*" style="display: none;"
+                                onchange="previewImage(this)">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Basic Info -->
+                <div class="grid grid-cols-2 gap-4 mt-6">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" class="form-input" value="{{ current_user.name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="tel" name="phone" class="form-input" value="{{ current_user.phone or '' }}"
+                            placeholder="+91 9876543210">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Professional Headline</label>
+                    <input type="text" name="headline" class="form-input" value="{{ current_user.headline or '' }}"
+                        placeholder="e.g., Frontend Developer | React | TypeScript">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">About</label>
+                    <textarea name="bio" class="form-textarea" rows="4"
+                        placeholder="Tell us about yourself...">{{ current_user.bio or '' }}</textarea>
+                </div>
+
+                <!-- Skills -->
+                <div class="form-group">
+                    <label class="form-label">Skills</label>
+                    <div id="skills-container" class="skills-grid mb-2">
+                        {% for skill in current_user.skills %}
+                        <span class="skill-badge" data-skill="{{ skill.name }}">
+                            {{ skill.name }}
+                            <button type="button" onclick="removeSkill(this)"
+                                style="background: none; border: none; cursor: pointer; margin-left: 4px; color: inherit;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </span>
+                        {% endfor %}
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="skill-input" class="form-input" placeholder="Add a skill (press Enter)">
+                        <button type="button" class="btn btn-secondary" onclick="addSkill()">Add</button>
+                    </div>
+                    <input type="hidden" name="skills" id="skills-hidden">
+                </div>
+
+                <!-- Resume Upload -->
+                <div class="form-group">
+                    <label class="form-label">Resume (PDF)</label>
+                    {% if current_user.resume %}
+                    <div class="flex items-center gap-4 mb-4 p-4"
+                        style="background: var(--gray-100); border-radius: var(--radius-lg);">
+                        <i class="fas fa-file-pdf" style="font-size: 32px; color: var(--error);"></i>
+                        <div class="flex-1">
+                            <p class="mb-0">Current Resume</p>
+                            <p class="text-sm text-muted mb-0">ATS Score: {{ current_user.resume.ats_score }}%</p>
+                        </div>
+                        <a href="{{ current_user.resume.file_path }}" class="btn btn-ghost btn-sm"
+                            target="_blank">View</a>
+                    </div>
+                    {% endif %}
+                    <div class="file-upload-area" id="resume-upload-area">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: var(--gray-400);"></i>
+                        <p>Drag & drop your resume or <span class="text-primary">browse</span></p>
+                        <small class="text-muted">PDF format, max 5MB</small>
+                        <input type="file" id="resume-file" name="resume" accept=".pdf" style="display: none;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer flex justify-end gap-4">
+                <a href="{{ url_for('profile') }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .file-upload-area {
+        border: 2px dashed var(--gray-300);
+        border-radius: var(--radius-lg);
+        padding: var(--space-8);
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .file-upload-area:hover {
+        border-color: var(--primary);
+        background: rgba(10, 102, 194, 0.02);
+    }
+
+    .file-upload-area.dragover {
+        border-color: var(--primary);
+        background: rgba(10, 102, 194, 0.05);
+    }
+</style>
+
+<script>
+    // Skills management
+    const skillsContainer = document.getElementById('skills-container');
+    const skillInput = document.getElementById('skill-input');
+    const skillsHidden = document.getElementById('skills-hidden');
+
+    function updateHiddenSkills() {
+        const skills = Array.from(skillsContainer.querySelectorAll('.skill-badge'))
+            .map(badge => badge.dataset.skill);
+        skillsHidden.value = skills.join(',');
+    }
+
+    function addSkill() {
+        const skill = skillInput.value.trim();
+        if (!skill) return;
+
+        // Check if skill already exists
+        const existing = skillsContainer.querySelector(`[data-skill="${skill}"]`);
+        if (existing) {
+            skillInput.value = '';
+            return;
+        }
+
+        const badge = document.createElement('span');
+        badge.className = 'skill-badge';
+        badge.dataset.skill = skill;
+        badge.innerHTML = `
+        ${skill}
+        <button type="button" onclick="removeSkill(this)" style="background: none; border: none; cursor: pointer; margin-left: 4px; color: inherit;">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+        skillsContainer.appendChild(badge);
+        skillInput.value = '';
+        updateHiddenSkills();
+    }
+
+    function removeSkill(btn) {
+        btn.parentElement.remove();
+        updateHiddenSkills();
+    }
+
+    skillInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addSkill();
+        }
+    });
+
+    // Initialize skills
+    updateHiddenSkills();
+
+    // Profile image preview
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('profile-preview');
+                if (preview.tagName === 'IMG') {
+                    preview.src = e.target.result;
+                } else {
+                    // Replace div with img
+                    const img = document.createElement('img');
+                    img.id = 'profile-preview';
+                    img.src = e.target.result;
+                    img.style.cssText = 'width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary);';
+                    preview.replaceWith(img);
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Resume upload
+    const resumeUploadArea = document.getElementById('resume-upload-area');
+    const resumeFile = document.getElementById('resume-file');
+
+    resumeUploadArea.addEventListener('click', () => resumeFile.click());
+
+    resumeUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        resumeUploadArea.classList.add('dragover');
+    });
+
+    resumeUploadArea.addEventListener('dragleave', () => {
+        resumeUploadArea.classList.remove('dragover');
+    });
+
+    resumeUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        resumeUploadArea.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            resumeFile.files = e.dataTransfer.files;
+            showResumePreview(e.dataTransfer.files[0]);
+        }
+    });
+
+    resumeFile.addEventListener('change', () => {
+        if (resumeFile.files.length) {
+            showResumePreview(resumeFile.files[0]);
+        }
+    });
+
+    function showResumePreview(file) {
+        resumeUploadArea.innerHTML = `
+        <i class="fas fa-file-pdf" style="font-size: 48px; color: var(--error);"></i>
+        <p>${file.name}</p>
+        <small class="text-muted">${(file.size / 1024).toFixed(1)} KB</small>
+    `;
+    }
+</script>
+{% endblock %}

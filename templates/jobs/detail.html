@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ job.title }} - {{ job.company }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; padding: var(--space-6) var(--space-4);">
+    <!-- Job Header -->
+    <div class="card mb-6">
+        <div class="card-body">
+            <div class="flex gap-6">
+                <div class="company-logo" style="width: 80px; height: 80px; font-size: 32px;">
+                    {{ job.company[0] }}
+                </div>
+                <div class="flex-1">
+                    <h1 style="margin-bottom: var(--space-2);">{{ job.title }}</h1>
+                    <p class="text-lg text-muted mb-4">{{ job.company }}</p>
+
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <span class="flex items-center gap-2">
+                            <i class="fas fa-map-marker-alt text-primary"></i>
+                            {{ job.location or 'Remote' }}
+                        </span>
+                        <span class="flex items-center gap-2">
+                            <i class="fas fa-briefcase text-primary"></i>
+                            {{ job.job_type or 'Full-time' }}
+                        </span>
+                        <span class="flex items-center gap-2">
+                            <i class="fas fa-clock text-primary"></i>
+                            {{ job.experience_min or 0 }}{% if job.experience_max %}-{{ job.experience_max }}{% endif %}
+                            years
+                        </span>
+                        {% if job.salary_min %}
+                        <span class="flex items-center gap-2">
+                            <i class="fas fa-rupee-sign text-primary"></i>
+                            {{ '₹{:,}'.format(job.salary_min) }}{% if job.salary_max %} - {{
+                            '₹{:,}'.format(job.salary_max) }}{% endif %} /year
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex gap-4">
+                        {% if current_user.is_authenticated and current_user.role == 'seeker' %}
+                        {% if has_applied %}
+                        <button class="btn btn-success btn-lg" disabled>
+                            <i class="fas fa-check"></i> Already Applied
+                        </button>
+                        <a href="#application-status" class="btn btn-secondary btn-lg">
+                            View Status
+                        </a>
+                        {% else %}
+                        <button class="btn btn-primary btn-lg" onclick="applyForJob()">
+                            <i class="fas fa-paper-plane"></i> Apply Now
+                        </button>
+                        {% endif %}
+                        {% elif not current_user.is_authenticated %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> Login to Apply
+                        </a>
+                        {% endif %}
+                        <button class="btn btn-ghost btn-lg">
+                            <i class="far fa-bookmark"></i> Save
+                        </button>
+                        <button class="btn btn-ghost btn-lg">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 2fr 1fr; gap: var(--space-6);">
+        <!-- Main Content -->
+        <div>
+            <!-- Description -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <h4><i class="fas fa-file-alt"></i> Job Description</h4>
+                </div>
+                <div class="card-body">
+                    <div style="white-space: pre-line; line-height: 1.8;">{{ job.description }}</div>
+                </div>
+            </div>
+
+            <!-- Requirements -->
+            {% if job.requirements %}
+            <div class="card mb-6">
+                <div class="card-header">
+                    <h4><i class="fas fa-list-check"></i> Requirements</h4>
+                </div>
+                <div class="card-body">
+                    <div style="white-space: pre-line; line-height: 1.8;">{{ job.requirements }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Skills -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <h4><i class="fas fa-code"></i> Required Skills</h4>
+                </div>
+                <div class="card-body">
+                    <div class="skills-grid">
+                        {% for skill in skills %}
+                        <span
+                            class="skill-badge {% if match_info and skill in match_info.matched %}tag-success{% elif match_info and skill in match_info.missing %}tag-warning{% endif %}">
+                            {% if match_info and skill in match_info.matched %}<i class="fas fa-check"></i> {% endif %}
+                            {{ skill }}
+                        </span>
+                        {% else %}
+                        <p class="text-muted">No specific skills mentioned</p>
+                        {% endfor %}
+                    </div>
+
+                    {% if match_info and not has_applied %}
+                    <div class="mt-4 p-4" style="background: var(--gray-100); border-radius: var(--radius-lg);">
+                        <div class="flex justify-between items-center mb-3">
+                            <h6 class="mb-0"><i class="fas fa-bullseye"></i> Your Match Score</h6>
+                            <span
+                                class="tag {{ 'tag-success' if match_info.percentage >= 70 else 'tag-warning' if match_info.percentage >= 40 else 'tag-danger' }}"
+                                style="font-size: 14px;">
+                                {{ match_info.percentage }}% Match
+                            </span>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="flex-1">
+                                <p class="text-sm text-muted mb-1">Skills you have:</p>
+                                <p class="text-success text-sm mb-0">
+                                    {% if match_info.matched %}
+                                    {{ match_info.matched | join(', ') }}
+                                    {% else %}
+                                    None matching
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm text-muted mb-1">Skills to learn:</p>
+                                <p class="text-warning text-sm mb-0">
+                                    {% if match_info.missing %}
+                                    {{ match_info.missing[:5] | join(', ') }}
+                                    {% else %}
+                                    All matched!
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Application Status (if applied) -->
+            {% if has_applied and application %}
+            <div class="card mb-6" id="application-status">
+                <div class="card-header"
+                    style="background: {% if application.status == 'approved' %}rgba(5, 118, 66, 0.1){% elif application.status == 'rejected' %}rgba(204, 16, 22, 0.1){% else %}rgba(231, 163, 62, 0.1){% endif %};">
+                    <h4>
+                        <i
+                            class="fas fa-{% if application.status == 'approved' %}check-circle text-success{% elif application.status == 'rejected' %}times-circle text-error{% else %}clock text-warning{% endif %}"></i>
+                        Application Status: <span class="status-badge status-{{ application.status }}">{{
+                            application.status }}</span>
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="text-center">
+                            <div class="ats-score {{ 'score-high' if application.ai_score >= 70 else 'score-medium' if application.ai_score >= 50 else 'score-low' }}"
+                                style="width: 100px; height: 100px; margin: 0 auto;">
+                                <svg viewBox="0 0 120 120">
+                                    <circle class="bg" cx="60" cy="60" r="50"></circle>
+                                    <circle class="progress" cx="60" cy="60" r="50" stroke-dasharray="314"
+                                        stroke-dashoffset="{{ 314 - (314 * application.ai_score / 100) }}"></circle>
+                                </svg>
+                                <div class="score-text">
+                                    <div class="score-number" style="font-size: var(--text-xl);">{{ application.ai_score
+                                        }}</div>
+                                    <div class="score-label">AI Score</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <h4 class="text-primary">{{ application.match_percentage or 0 }}%</h4>
+                            <p class="text-muted">Skills Match</p>
+                        </div>
+                        <div class="text-center">
+                            <h4>{{ application.applied_at.strftime('%b %d') if application.applied_at else 'N/A' }}</h4>
+                            <p class="text-muted">Applied Date</p>
+                        </div>
+                    </div>
+
+                    {% if application.letter_path %}
+                    <div class="alert alert-{{ 'success' if application.status == 'approved' else 'info' }}">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Your {{ 'offer letter' if application.status == 'approved' else 'feedback report' }} is
+                            ready!</span>
+                        <a href="{{ application.letter_path }}" class="btn btn-sm btn-primary ml-4" target="_blank">
+                            <i class="fas fa-download"></i> Download PDF
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if application.feedback %}
+                    {% set feedback = application.feedback | safe %}
+                    <div class="mt-4">
+                        <h5>AI Feedback</h5>
+                        <div class="grid grid-cols-2 gap-4 mt-3">
+                            <div>
+                                <h6 class="text-success"><i class="fas fa-check-circle"></i> Strengths</h6>
+                                <ul class="text-sm">
+                                    <li>Strong technical skill match</li>
+                                    <li>Profile completeness</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h6 class="text-warning"><i class="fas fa-exclamation-triangle"></i> Improvements</h6>
+                                <ul class="text-sm">
+                                    <li>Add more relevant experience</li>
+                                    <li>Improve resume formatting</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            <!-- Company Info -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <h5><i class="fas fa-building"></i> About Company</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="company-logo"
+                        style="width: 80px; height: 80px; margin: 0 auto var(--space-4); font-size: 32px;">
+                        {{ job.company[0] }}
+                    </div>
+                    <h5>{{ job.company }}</h5>
+                    <p class="text-muted">{{ job.location or 'Remote' }}</p>
+                </div>
+            </div>
+
+            <!-- Job Summary -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Job Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="flex justify-between mb-3">
+                        <span class="text-muted">Posted</span>
+                        <span>{{ job.created_at.strftime('%b %d, %Y') if job.created_at else 'Recently' }}</span>
+                    </div>
+                    <div class="flex justify-between mb-3">
+                        <span class="text-muted">Job Type</span>
+                        <span>{{ job.job_type or 'Full-time' }}</span>
+                    </div>
+                    <div class="flex justify-between mb-3">
+                        <span class="text-muted">Experience</span>
+                        <span>{{ job.experience_min or 0 }}-{{ job.experience_max or job.experience_min or 0 }}
+                            years</span>
+                    </div>
+                    {% if job.salary_min %}
+                    <div class="flex justify-between">
+                        <span class="text-muted">Salary</span>
+                        <span>{{ '₹{:,}'.format(job.salary_min) }}+</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Similar Jobs -->
+            {% if similar_jobs %}
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-lightbulb"></i> Similar Jobs</h5>
+                </div>
+                <div class="card-body">
+                    {% for similar in similar_jobs %}
+                    <a href="{{ url_for('jobs_bp.job_detail', job_id=similar.id) }}" class="block mb-3 p-3"
+                        style="background: var(--gray-100); border-radius: var(--radius-md); text-decoration: none;">
+                        <h6 style="color: var(--dark); margin-bottom: 2px;">{{ similar.title }}</h6>
+                        <p class="text-muted text-sm mb-0">{{ similar.company }}</p>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Application Modal -->
+<div class="modal-overlay" id="apply-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Apply for {{ job.title }}</h3>
+            <button class="modal-close" onclick="closeModal('apply-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="apply-loading" class="text-center p-6">
+                <div class="loader" style="margin: 0 auto;"></div>
+                <p class="mt-4">AI is analyzing your profile...</p>
+            </div>
+            <div id="apply-result" class="hidden"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function applyForJob() {
+        openModal('apply-modal');
+
+        try {
+            const response = await fetch('/jobs/{{ job.id }}/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+
+            document.getElementById('apply-loading').classList.add('hidden');
+            const resultDiv = document.getElementById('apply-result');
+            resultDiv.classList.remove('hidden');
+
+            if (data.success) {
+                const statusClass = data.status === 'approved' ? 'success' :
+                    data.status === 'rejected' ? 'error' : 'warning';
+
+                resultDiv.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-${data.status === 'approved' ? 'check-circle text-success' :
+                        data.status === 'rejected' ? 'times-circle text-error' :
+                            'clock text-warning'}" 
+                       style="font-size: 64px;"></i>
+                    <h3 class="mt-4">${data.status === 'approved' ? 'Congratulations!' :
+                        data.status === 'rejected' ? 'Application Not Successful' :
+                            'Under Review'}</h3>
+                    <p class="text-muted">${data.status === 'approved' ?
+                        'Your application has been approved! Check your email for the offer letter.' :
+                        data.status === 'rejected' ?
+                            'Don\'t worry! Check the feedback to improve your profile.' :
+                            'Your application is under review. You\'ll be notified soon.'}</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="card p-4">
+                            <h4 class="text-primary">${data.score}%</h4>
+                            <p class="text-muted text-sm mb-0">AI Score</p>
+                        </div>
+                        <div class="card p-4">
+                            <h4 class="text-primary">${data.match_percentage}%</h4>
+                            <p class="text-muted text-sm mb-0">Skills Match</p>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary mt-6" onclick="location.reload()">
+                        View Details
+                    </button>
+                </div>
+            `;
+            } else {
+                resultDiv.innerHTML = `
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>${data.message}</span>
+                </div>
+            `;
+            }
+        } catch (error) {
+            document.getElementById('apply-loading').classList.add('hidden');
+            document.getElementById('apply-result').innerHTML = `
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>An error occurred. Please try again.</span>
+            </div>
+        `;
+            document.getElementById('apply-result').classList.remove('hidden');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: var(--space-12) 0;">
+    <div class="card" style="max-width: 600px; margin: 0 auto;">
+        <div class="card-header text-center">
+            <h3><i class="fas fa-user-plus"></i> Create Your Account</h3>
+            <p class="text-muted">Join SkillMatch to find your perfect career match</p>
+        </div>
+
+        <div class="card-body">
+            <!-- Progress Steps -->
+            <div class="flex justify-between mb-8" id="progress-steps">
+                <div class="step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <span>Basic Info</span>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <span>Profile</span>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <span>Face Setup</span>
+                </div>
+            </div>
+
+            <style>
+                .step {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 8px;
+                    opacity: 0.5;
+                    transition: all 0.3s ease;
+                }
+
+                .step.active,
+                .step.completed {
+                    opacity: 1;
+                }
+
+                .step-circle {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background: var(--gray-200);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 600;
+                    color: var(--gray-600);
+                    transition: all 0.3s ease;
+                }
+
+                .step.active .step-circle {
+                    background: var(--primary);
+                    color: white;
+                }
+
+                .step.completed .step-circle {
+                    background: var(--success);
+                    color: white;
+                }
+            </style>
+
+            <form id="register-form">
+                <!-- Step 1: Basic Info -->
+                <div class="form-step active" data-step="1">
+                    <div class="form-group">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" name="name" class="form-input" placeholder="John Doe" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" name="email" class="form-input" placeholder="john@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" name="phone" class="form-input" placeholder="+91 9876543210">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password *</label>
+                        <input type="password" name="password" class="form-input" placeholder="Create a strong password"
+                            required minlength="6">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">I am a *</label>
+                        <div class="flex gap-4">
+                            <label class="role-option">
+                                <input type="radio" name="role" value="seeker" checked>
+                                <div class="role-card">
+                                    <i class="fas fa-user-tie"></i>
+                                    <span>Job Seeker</span>
+                                </div>
+                            </label>
+                            <label class="role-option">
+                                <input type="radio" name="role" value="employer">
+                                <div class="role-card">
+                                    <i class="fas fa-building"></i>
+                                    <span>Employer</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <style>
+                        .role-option {
+                            flex: 1;
+                            cursor: pointer;
+                        }
+
+                        .role-option input {
+                            display: none;
+                        }
+
+                        .role-card {
+                            padding: var(--space-4);
+                            border: 2px solid var(--gray-300);
+                            border-radius: var(--radius-lg);
+                            text-align: center;
+                            transition: all 0.3s ease;
+                        }
+
+                        .role-card i {
+                            font-size: 32px;
+                            color: var(--gray-500);
+                            display: block;
+                            margin-bottom: var(--space-2);
+                        }
+
+                        .role-option input:checked+.role-card {
+                            border-color: var(--primary);
+                            background: rgba(10, 102, 194, 0.05);
+                        }
+
+                        .role-option input:checked+.role-card i {
+                            color: var(--primary);
+                        }
+                    </style>
+
+                    <!-- Employer-specific field -->
+                    <div class="form-group hidden" id="company-field">
+                        <label class="form-label">Company Name *</label>
+                        <input type="text" name="company_name" class="form-input" placeholder="Your Company Name">
+                    </div>
+
+                    <button type="button" class="btn btn-primary w-full" onclick="nextStep()">
+                        Continue <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Step 2: Profile -->
+                <div class="form-step" data-step="2" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Professional Headline</label>
+                        <input type="text" name="headline" class="form-input"
+                            placeholder="e.g., Frontend Developer | React | TypeScript">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">About You</label>
+                        <textarea name="bio" class="form-textarea"
+                            placeholder="Write a short bio about yourself..."></textarea>
+                    </div>
+
+                    <div class="form-group" id="skills-field">
+                        <label class="form-label">Skills (Tech Stack)</label>
+                        <input type="text" name="skills" class="form-input"
+                            placeholder="JavaScript, Python, React, Node.js">
+                        <small class="text-muted">Separate skills with commas</small>
+                    </div>
+
+                    <div class="form-group" id="resume-field">
+                        <label class="form-label">Upload Resume (PDF)</label>
+                        <div class="file-upload-area" id="resume-upload">
+                            <i class="fas fa-file-pdf" style="font-size: 48px; color: var(--gray-400);"></i>
+                            <p>Drag & drop your resume or <span class="text-primary">browse</span></p>
+                            <small class="text-muted">PDF format, max 5MB</small>
+                            <input type="file" name="resume" accept=".pdf" style="display: none;">
+                        </div>
+                        <div class="file-preview hidden" id="resume-preview"></div>
+                    </div>
+
+                    <style>
+                        .file-upload-area {
+                            border: 2px dashed var(--gray-300);
+                            border-radius: var(--radius-lg);
+                            padding: var(--space-8);
+                            text-align: center;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        }
+
+                        .file-upload-area:hover {
+                            border-color: var(--primary);
+                            background: rgba(10, 102, 194, 0.02);
+                        }
+
+                        .file-upload-area.dragover {
+                            border-color: var(--primary);
+                            background: rgba(10, 102, 194, 0.05);
+                        }
+
+                        .file-preview {
+                            margin-top: var(--space-4);
+                            padding: var(--space-3);
+                            background: var(--gray-100);
+                            border-radius: var(--radius-md);
+                            display: flex;
+                            align-items: center;
+                            gap: var(--space-3);
+                        }
+                    </style>
+
+                    <div class="flex gap-4">
+                        <button type="button" class="btn btn-secondary flex-1" onclick="prevStep()">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button type="button" class="btn btn-primary flex-1" onclick="nextStep()">
+                            Continue <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Face Recognition -->
+                <div class="form-step" data-step="3" style="display: none;">
+                    <div class="text-center mb-6">
+                        <h4>Set Up Face Recognition</h4>
+                        <p class="text-muted">Enable secure face login for your account</p>
+                    </div>
+
+                    <div class="webcam-container mb-6">
+                        <video id="webcam" autoplay playsinline></video>
+                        <canvas id="face-canvas" style="display: none;"></canvas>
+                        <div class="webcam-overlay"></div>
+                        <div class="face-status" id="face-status">Position your face in the circle</div>
+                    </div>
+
+                    <div class="face-preview hidden mb-6" id="face-preview">
+                        <img id="captured-face"
+                            style="max-width: 200px; border-radius: var(--radius-xl); margin: 0 auto; display: block;">
+                        <p class="text-center text-success mt-2"><i class="fas fa-check-circle"></i> Face captured
+                            successfully!</p>
+                    </div>
+
+                    <div class="flex gap-4 mb-6">
+                        <button type="button" id="capture-btn" class="btn btn-secondary flex-1" onclick="captureFace()">
+                            <i class="fas fa-camera"></i> Capture Face
+                        </button>
+                        <button type="button" id="retake-btn" class="btn btn-ghost hidden" onclick="retakeFace()">
+                            <i class="fas fa-redo"></i> Retake
+                        </button>
+                    </div>
+
+                    <div class="alert alert-info mb-6">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Face recognition is optional. You can always set it up later from your profile
+                            settings.</span>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button type="button" class="btn btn-secondary flex-1" onclick="prevStep()">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button type="submit" class="btn btn-success flex-1">
+                            <i class="fas fa-check"></i> Complete Registration
+                        </button>
+                    </div>
+
+                    <p class="text-center mt-4">
+                        <button type="button" class="btn btn-ghost" onclick="skipFace()">Skip for now</button>
+                    </p>
+                </div>
+            </form>
+
+            <div id="form-error" class="alert alert-error hidden mt-4"></div>
+        </div>
+
+        <div class="card-footer text-center">
+            Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script src="{{ url_for('static', filename='js/face-recognition.js') }}"></script>
+<script>
+    // Role toggle for company field
+    document.querySelectorAll('input[name="role"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            const companyField = document.getElementById('company-field');
+            const skillsField = document.getElementById('skills-field');
+            const resumeField = document.getElementById('resume-field');
+
+            if (this.value === 'employer') {
+                companyField.classList.remove('hidden');
+                skillsField.classList.add('hidden');
+                resumeField.classList.add('hidden');
+            } else {
+                companyField.classList.add('hidden');
+                skillsField.classList.remove('hidden');
+                resumeField.classList.remove('hidden');
+            }
+        });
+    });
+
+    // File upload handling
+    const uploadArea = document.getElementById('resume-upload');
+    const fileInput = uploadArea.querySelector('input[type="file"]');
+    const preview = document.getElementById('resume-preview');
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length) {
+            fileInput.files = files;
+            showFilePreview(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+            showFilePreview(fileInput.files[0]);
+        }
+    });
+
+    function showFilePreview(file) {
+        preview.classList.remove('hidden');
+        preview.innerHTML = `
+            <i class="fas fa-file-pdf" style="font-size: 24px; color: var(--error);"></i>
+            <span>${file.name}</span>
+            <span class="text-muted">(${(file.size / 1024).toFixed(1)} KB)</span>
+        `;
+        uploadArea.style.display = 'none';
+    }
+</script>
+{% endblock %}

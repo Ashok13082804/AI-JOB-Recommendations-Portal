@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Job Seeker{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid container" style="padding-top: var(--space-6);">
+    <!-- Left Sidebar - Profile Card -->
+    <aside class="dashboard-sidebar">
+        <div class="card">
+            <div class="profile-header" style="height: 80px;"></div>
+            <div style="padding: var(--space-4); text-align: center; margin-top: -40px;">
+                {% if current_user.profile_image %}
+                <img src="{{ current_user.profile_image }}" alt="{{ current_user.name }}" class="profile-avatar"
+                    style="position: relative; width: 80px; height: 80px; margin: 0 auto;">
+                {% else %}
+                <div class="profile-avatar"
+                    style="position: relative; width: 80px; height: 80px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 600; background: var(--primary); color: white;">
+                    {{ current_user.name[0] }}
+                </div>
+                {% endif %}
+                <h4 style="margin-top: var(--space-4);">{{ current_user.name }}</h4>
+                <p class="text-muted text-sm">{{ current_user.headline or 'Add a headline' }}</p>
+            </div>
+            <div class="card-body" style="border-top: 1px solid var(--gray-200);">
+                <div class="flex justify-between mb-2">
+                    <span class="text-muted text-sm">Profile views</span>
+                    <span class="text-primary">{{ applications|length * 5 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-muted text-sm">Applications</span>
+                    <span class="text-primary">{{ applications|length }}</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('edit_profile') }}" class="btn btn-secondary btn-sm w-full">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </a>
+            </div>
+        </div>
+
+        <!-- Resume Score -->
+        <div class="card mt-4">
+            <div class="card-body text-center">
+                <h5 class="mb-4">Resume Score</h5>
+                <div
+                    class="ats-score {{ 'score-high' if current_user.resume and current_user.resume.ats_score >= 70 else 'score-medium' if current_user.resume and current_user.resume.ats_score >= 50 else 'score-low' }}">
+                    <svg viewBox="0 0 120 120">
+                        <circle class="bg" cx="60" cy="60" r="50"></circle>
+                        <circle class="progress" cx="60" cy="60" r="50" stroke-dasharray="314"
+                            stroke-dashoffset="{{ 314 - (314 * (current_user.resume.ats_score if current_user.resume else 0) / 100) }}">
+                        </circle>
+                    </svg>
+                    <div class="score-text">
+                        <div class="score-number">{{ current_user.resume.ats_score if current_user.resume else 0 }}
+                        </div>
+                        <div class="score-label">ATS Score</div>
+                    </div>
+                </div>
+                {% if not current_user.resume %}
+                <a href="{{ url_for('edit_profile') }}" class="btn btn-primary btn-sm mt-4">
+                    <i class="fas fa-upload"></i> Upload Resume
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card card">
+                <div class="stat-icon">
+                    <i class="fas fa-paper-plane"></i>
+                </div>
+                <h3>{{ applications|length }}</h3>
+                <p>Applications</p>
+            </div>
+            <div class="stat-card card">
+                <div class="stat-icon" style="background: rgba(5, 118, 66, 0.1); color: var(--success);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3>{{ applications|selectattr('status', 'eq', 'approved')|list|length }}</h3>
+                <p>Approved</p>
+            </div>
+            <div class="stat-card card">
+                <div class="stat-icon" style="background: rgba(231, 163, 62, 0.1); color: var(--warning);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3>{{ applications|selectattr('status', 'eq', 'under_review')|list|length }}</h3>
+                <p>Under Review</p>
+            </div>
+            <div class="stat-card card">
+                <div class="stat-icon" style="background: rgba(204, 16, 22, 0.1); color: var(--error);">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <h3>{{ applications|selectattr('status', 'eq', 'rejected')|list|length }}</h3>
+                <p>Rejected</p>
+            </div>
+        </div>
+
+        <!-- Recent Applications -->
+        <div class="card">
+            <div class="card-header flex justify-between items-center">
+                <h4><i class="fas fa-history"></i> Recent Applications</h4>
+                <a href="#" class="btn btn-ghost btn-sm">View All</a>
+            </div>
+            <div class="card-body">
+                {% if applications %}
+                <div class="applications-list">
+                    {% for app in applications[:5] %}
+                    <div class="application-item flex gap-4 items-center p-4"
+                        style="border-bottom: 1px solid var(--gray-200);">
+                        <div class="company-logo">{{ app.job.company[0] }}</div>
+                        <div class="flex-1">
+                            <h5 style="margin-bottom: 2px;">{{ app.job.title }}</h5>
+                            <p class="text-muted text-sm mb-0">{{ app.job.company }} • {{ app.job.location or 'Remote'
+                                }}</p>
+                        </div>
+                        <div class="text-center">
+                            <span class="status-badge status-{{ app.status }}">{{ app.status }}</span>
+                            <p class="text-muted text-sm mt-1">Score: {{ app.ai_score }}%</p>
+                        </div>
+                        <div>
+                            {% if app.letter_path %}
+                            <a href="{{ app.letter_path }}" class="btn btn-sm btn-secondary" target="_blank">
+                                <i class="fas fa-file-pdf"></i> Letter
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center p-6">
+                    <i class="fas fa-inbox" style="font-size: 48px; color: var(--gray-400);"></i>
+                    <p class="text-muted mt-4">No applications yet. Start applying!</p>
+                    <a href="{{ url_for('jobs_bp.jobs_list') }}" class="btn btn-primary mt-4">
+                        <i class="fas fa-search"></i> Browse Jobs
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recommended Jobs -->
+        <div class="card mt-6">
+            <div class="card-header flex justify-between items-center">
+                <h4><i class="fas fa-magic"></i> Recommended For You</h4>
+                <a href="{{ url_for('jobs_bp.jobs_list') }}" class="btn btn-ghost btn-sm">See All</a>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-2 gap-4">
+                    {% for job in recommended_jobs %}
+                    <div class="job-card card">
+                        <div class="card-body">
+                            <div class="flex gap-3">
+                                <div class="company-logo" style="width: 48px; height: 48px; font-size: 16px;">
+                                    {{ job.company[0] }}
+                                </div>
+                                <div>
+                                    <h5 class="job-title" style="font-size: var(--text-base);">{{ job.title }}</h5>
+                                    <p class="company-name">{{ job.company }}</p>
+                                </div>
+                            </div>
+                            <div class="job-meta mt-3">
+                                <span><i class="fas fa-map-marker-alt"></i> {{ job.location or 'Remote' }}</span>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{{ url_for('jobs_bp.job_detail', job_id=job.id) }}"
+                                class="btn btn-primary btn-sm w-full">Apply</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No recommendations yet. Complete your profile to get personalized job
+                        recommendations!</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Right Sidebar -->
+    <aside class="dashboard-sidebar">
+        <!-- Skills -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-code"></i> Your Skills</h5>
+            </div>
+            <div class="card-body">
+                <div class="skills-grid">
+                    {% for skill in current_user.skills[:8] %}
+                    <span class="skill-badge">
+                        {{ skill.name }}
+                        {% if skill.endorsements > 0 %}
+                        <span class="skill-endorsements">{{ skill.endorsements }}</span>
+                        {% endif %}
+                    </span>
+                    {% else %}
+                    <p class="text-muted text-sm">Add skills to your profile</p>
+                    {% endfor %}
+                </div>
+                <a href="{{ url_for('edit_profile') }}" class="btn btn-ghost btn-sm mt-4 w-full">
+                    <i class="fas fa-plus"></i> Add Skills
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Tips -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-lightbulb"></i> Quick Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul style="list-style: none; padding: 0;">
+                    <li class="flex gap-2 mb-3">
+                        <i class="fas fa-check text-success"></i>
+                        <span class="text-sm">Complete your profile to get noticed</span>
+                    </li>
+                    <li class="flex gap-2 mb-3">
+                        <i class="fas fa-check text-success"></i>
+                        <span class="text-sm">Upload an ATS-friendly resume</span>
+                    </li>
+                    <li class="flex gap-2 mb-3">
+                        <i class="fas fa-check text-success"></i>
+                        <span class="text-sm">Add relevant skills and keywords</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <i class="fas fa-check text-success"></i>
+                        <span class="text-sm">Connect with professionals</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </aside>
+</div>
+{% endblock %}

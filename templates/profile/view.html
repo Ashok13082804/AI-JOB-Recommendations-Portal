@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ user.name }} - Profile{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; padding: var(--space-6) var(--space-4);">
+    <!-- Profile Card -->
+    <div class="card">
+        <div class="profile-header"></div>
+        <img src="{{ user.profile_image or '/static/images/default-avatar.png' }}" alt="{{ user.name }}"
+            class="profile-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="profile-avatar"
+            style="display: none; align-items: center; justify-content: center; font-size: 48px; font-weight: 700; background: var(--primary); color: white;">
+            {{ user.name[0] }}
+        </div>
+
+        <div class="profile-info">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="profile-name">{{ user.name }}</h1>
+                    <p class="profile-headline">{{ user.headline or 'Add a professional headline' }}</p>
+                    {% if user.company_name %}
+                    <p class="text-muted"><i class="fas fa-building"></i> {{ user.company_name }}</p>
+                    {% endif %}
+                </div>
+                <div class="flex gap-2">
+                    {% if current_user.is_authenticated and current_user.id == user.id %}
+                    <a href="{{ url_for('edit_profile') }}" class="btn btn-secondary">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                    {% elif current_user.is_authenticated %}
+                    <button class="btn btn-primary" onclick="sendConnection({{ user.id }})">
+                        <i class="fas fa-user-plus"></i> Connect
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <div class="stat-number">{{ user.skills|length }}</div>
+                    <div class="stat-label">Skills</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="stat-number">{{ user.experiences|length }}</div>
+                    <div class="stat-label">Experiences</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="stat-number">{{ posts|length }}</div>
+                    <div class="stat-label">Posts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 2fr 1fr; gap: var(--space-6); margin-top: var(--space-6);">
+        <div>
+            <!-- About -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <h4><i class="fas fa-user"></i> About</h4>
+                </div>
+                <div class="card-body">
+                    <p>{{ user.bio or 'No bio added yet.' }}</p>
+                </div>
+            </div>
+
+            <!-- Experience -->
+            <div class="card mb-6">
+                <div class="card-header flex justify-between items-center">
+                    <h4><i class="fas fa-briefcase"></i> Experience</h4>
+                    {% if current_user.is_authenticated and current_user.id == user.id %}
+                    <button class="btn btn-ghost btn-sm" data-modal-trigger="add-experience-modal">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% for exp in user.experiences %}
+                    <div class="experience-item flex gap-4 {% if not loop.last %}mb-4 pb-4{% endif %}"
+                        style="{% if not loop.last %}border-bottom: 1px solid var(--gray-200);{% endif %}">
+                        <div
+                            style="width: 48px; height: 48px; background: var(--gray-100); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-building" style="color: var(--gray-500);"></i>
+                        </div>
+                        <div>
+                            <h5 style="margin-bottom: 2px;">{{ exp.title }}</h5>
+                            <p class="text-muted mb-1">{{ exp.company }}{% if exp.location %} • {{ exp.location }}{%
+                                endif %}</p>
+                            <p class="text-sm text-muted mb-2">
+                                {{ exp.start_date.strftime('%b %Y') if exp.start_date else 'Present' }} -
+                                {{ exp.end_date.strftime('%b %Y') if exp.end_date else 'Present' }}
+                                {% if exp.is_current %}<span class="tag tag-success ml-2">Current</span>{% endif %}
+                            </p>
+                            {% if exp.description %}
+                            <p class="text-sm">{{ exp.description }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No experience added yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Education -->
+            <div class="card mb-6">
+                <div class="card-header flex justify-between items-center">
+                    <h4><i class="fas fa-graduation-cap"></i> Education</h4>
+                    {% if current_user.is_authenticated and current_user.id == user.id %}
+                    <button class="btn btn-ghost btn-sm" data-modal-trigger="add-education-modal">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% for edu in user.educations %}
+                    <div class="education-item flex gap-4 {% if not loop.last %}mb-4 pb-4{% endif %}"
+                        style="{% if not loop.last %}border-bottom: 1px solid var(--gray-200);{% endif %}">
+                        <div
+                            style="width: 48px; height: 48px; background: var(--gray-100); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-university" style="color: var(--gray-500);"></i>
+                        </div>
+                        <div>
+                            <h5 style="margin-bottom: 2px;">{{ edu.institution }}</h5>
+                            <p class="text-muted mb-1">{{ edu.degree }}{% if edu.field %} in {{ edu.field }}{% endif %}
+                            </p>
+                            <p class="text-sm text-muted">
+                                {% if edu.year %}Class of {{ edu.year }}{% endif %}
+                                {% if edu.grade %} • {{ edu.grade }}{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No education added yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-rss"></i> Recent Activity</h4>
+                </div>
+                <div class="card-body">
+                    {% for post in posts[:5] %}
+                    <div class="post-card mb-4 pb-4" style="border-bottom: 1px solid var(--gray-200);">
+                        <div class="post-content">{{ post.content[:200] }}{% if post.content|length > 200 %}...{% endif
+                            %}</div>
+                        <div class="flex gap-4 text-sm text-muted mt-2">
+                            <span><i class="fas fa-heart"></i> {{ post.likes_count }}</span>
+                            <span><i class="fas fa-comment"></i> {{ post.comments|length }}</span>
+                            <span>{{ post.created_at.strftime('%b %d, %Y') if post.created_at else '' }}</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No recent activity.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div>
+            <!-- Skills -->
+            <div class="card mb-6">
+                <div class="card-header flex justify-between items-center">
+                    <h4><i class="fas fa-code"></i> Skills</h4>
+                </div>
+                <div class="card-body">
+                    <div class="skills-grid">
+                        {% for skill in user.skills %}
+                        <span class="skill-badge"
+                            onclick="{% if current_user.is_authenticated and current_user.id != user.id %}endorseSkill({{ skill.id }}){% endif %}">
+                            {{ skill.name }}
+                            {% if skill.endorsements > 0 %}
+                            <span class="skill-endorsements">{{ skill.endorsements }}</span>
+                            {% endif %}
+                        </span>
+                        {% else %}
+                        <p class="text-muted text-sm">No skills added yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resume -->
+            {% if user.resume and (current_user.is_authenticated and (current_user.id == user.id or current_user.role ==
+            'employer')) %}
+            <div class="card mb-6">
+                <div class="card-header">
+                    <h4><i class="fas fa-file-pdf"></i> Resume</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="ats-score {{ 'score-high' if user.resume.ats_score >= 70 else 'score-medium' if user.resume.ats_score >= 50 else 'score-low' }}"
+                        style="width: 100px; height: 100px;">
+                        <svg viewBox="0 0 120 120">
+                            <circle class="bg" cx="60" cy="60" r="50"></circle>
+                            <circle class="progress" cx="60" cy="60" r="50" stroke-dasharray="314"
+                                stroke-dashoffset="{{ 314 - (314 * user.resume.ats_score / 100) }}"></circle>
+                        </svg>
+                        <div class="score-text">
+                            <div class="score-number" style="font-size: var(--text-xl);">{{ user.resume.ats_score }}
+                            </div>
+                            <div class="score-label">ATS</div>
+                        </div>
+                    </div>
+                    <a href="{{ user.resume.file_path }}" class="btn btn-primary btn-sm mt-4" download>
+                        <i class="fas fa-download"></i> Download Resume
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Contact -->
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-address-card"></i> Contact</h4>
+                </div>
+                <div class="card-body">
+                    <p class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-envelope text-muted"></i>
+                        <span>{{ user.email }}</span>
+                    </p>
+                    {% if user.phone %}
+                    <p class="flex items-center gap-2">
+                        <i class="fas fa-phone text-muted"></i>
+                        <span>{{ user.phone }}</span>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function sendConnection(userId) {
+        const response = await fetch(`/social/connect/${userId}`, { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            showToast('Connection request sent!', 'success');
+        } else {
+            showToast(data.message, 'error');
+        }
+    }
+
+    async function endorseSkill(skillId) {
+        const response = await fetch(`/social/endorse/${skillId}`, { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            showToast('Skill endorsed!', 'success');
+            location.reload();
+        }
+    }
+</script>
+{% endblock %}

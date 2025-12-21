@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="{% block meta_description %}SkillMatch - AI-Powered Job Portal with Resume Evaluation{% endblock %}">
+    <title>{% block title %}SkillMatch{% endblock %} | AI Job Portal</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <!-- Main Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('index') }}" class="logo">
+                <div class="logo-icon">S</div>
+                SkillMatch
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' }}">Home</a></li>
+                <li><a href="{{ url_for('jobs_bp.jobs_list') }}"
+                        class="{{ 'active' if request.endpoint == 'jobs_bp.jobs_list' }}">Jobs</a></li>
+                {% if current_user.is_authenticated %}
+                {% if current_user.role == 'seeker' %}
+                <li><a href="{{ url_for('resume_analyze') }}"
+                        class="{{ 'active' if request.endpoint == 'resume_analyze' }}">
+                        <i class="fas fa-file-alt"></i> Resume
+                    </a></li>
+                {% endif %}
+                <li><a href="{{ url_for('social_bp.feed') }}"
+                        class="{{ 'active' if request.endpoint == 'social_bp.feed' }}">Feed</a></li>
+                <li><a href="{{ url_for('dashboard') }}"
+                        class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a></li>
+                {% endif %}
+            </ul>
+
+            <div class="nav-actions flex items-center gap-4">
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('profile') }}" class="btn btn-ghost">
+                    <i class="fas fa-user"></i>
+                    {{ current_user.name.split()[0] }}
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm">Logout</a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-ghost">Login</a>
+                <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container mt-4">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} fade-in">
+            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <h4>SkillMatch</h4>
+                    <p>AI-powered job portal with smart resume evaluation and career matching.</p>
+                </div>
+                <div>
+                    <h4>For Job Seekers</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Browse Jobs</a></li>
+                        <li><a href="#">Resume Builder</a></li>
+                        <li><a href="#">Career Resources</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>For Employers</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Post a Job</a></li>
+                        <li><a href="#">Find Candidates</a></li>
+                        <li><a href="#">Pricing</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Connect</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 SkillMatch. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

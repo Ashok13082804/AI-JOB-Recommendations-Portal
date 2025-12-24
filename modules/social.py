@@ -44,16 +44,19 @@ def create_post():
     post = Post(
         user_id=current_user.id,
         content=data.get('content'),
-        post_type=data.get('post_type', 'text')
+        post_type=data.get('post_type', 'text'),
+        image_url=data.get('image_url')
     )
     
     db.session.add(post)
     db.session.commit()
     
+    # If it's a job update or shared profile, add extra metadata if needed
+    
     return jsonify({
         'success': True,
         'post_id': post.id,
-        'message': 'Post created successfully'
+        'message': f"{data.get('post_type', 'Post').capitalize()} created successfully"
     })
 
 @social_bp.route('/post/<int:post_id>/like', methods=['POST'])

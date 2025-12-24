@@ -7,3 +7,4 @@ pillow
 numpy
 reportlab
 python-dateutil
+flask-babel

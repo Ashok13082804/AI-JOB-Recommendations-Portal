@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} - Job Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-5">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                {% if event.image_url %}
+                <img src="{{ event.image_url }}" class="img-fluid w-100" alt="{{ event.title }}"
+                    style="max-height: 400px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex gap-2 mb-3">
+                        <span class="badge bg-primary px-3 rounded-pill">{{ event.event_type|capitalize }}</span>
+                        {% if event.is_internship %}
+                        <span class="badge bg-success px-3 rounded-pill">Internship Opportunity</span>
+                        {% endif %}
+                    </div>
+                    <h1 class="display-5 fw-bold mb-4">{{ event.title }}</h1>
+
+                    <div class="row mb-5 border-top border-bottom py-4 g-4">
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light p-3 rounded-3 me-3">
+                                    <i class="bi bi-calendar3 fs-4 text-primary"></i>
+                                </div>
+                                <div>
+                                    <div class="small fw-bold text-muted text-uppercase">Date & Time</div>
+                                    <div class="fw-bold">{{ event.start_date.strftime('%B %d, %Y at %I:%M %p') }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light p-3 rounded-3 me-3">
+                                    <i class="bi bi-geo-alt fs-4 text-primary"></i>
+                                </div>
+                                <div>
+                                    <div class="small fw-bold text-muted text-uppercase">Location</div>
+                                    <div class="fw-bold">{{ event.location or 'Online' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="fw-bold mb-3">About this Event</h3>
+                    <div class="event-description lead mb-5">
+                        {{ event.description|nl2br }}
+                    </div>
+
+                    {% if event.url %}
+                    <div class="alert alert-info border-0 shadow-sm rounded-4 d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill fs-3 me-3"></i>
+                        <div>
+                            <strong>Official Link:</strong> Visit the official event page for more details.
+                            <br>
+                            <a href="{{ event.url }}" target="_blank" class="alert-link">Visit External URL <i
+                                    class="bi bi-box-arrow-up-right small"></i></a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 2rem;">
+                <div class="card border-0 shadow rounded-4 p-4 mb-4">
+                    <h4 class="fw-bold mb-4">Registration</h4>
+                    {% if current_user.is_authenticated %}
+                    {% if is_registered %}
+                    <div class="text-center py-3">
+                        <div class="display-1 text-success mb-3"><i class="bi bi-check-circle-fill"></i></div>
+                        <h5 class="fw-bold">You're Registered!</h5>
+                        <p class="text-muted small">We've added this event to your calendar. You'll receive updates via
+                            email.</p>
+                        <a href="{{ url_for('events_bp.my_events') }}"
+                            class="btn btn-outline-primary w-100 rounded-pill mt-3">My Events</a>
+                    </div>
+                    {% else %}
+                    <form id="registerForm">
+                        <button type="button" onclick="registerForEvent({{ event.id }})"
+                            class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold shadow">
+                            Register Now
+                        </button>
+                        <p class="text-center text-muted small mt-3 px-3">
+                            By registering, you agree to the event terms and conditions.
+                        </p>
+                    </form>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="mb-4">Please log in to register for this event.</p>
+                        <a href="{{ url_for('login') }}" class="btn btn-primary w-100 rounded-pill py-3 fw-bold">Login
+                            to Register</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 p-4">
+                    <h5 class="fw-bold mb-3">Organizer</h5>
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                            style="width: 50px; height: 50px;">
+                            <span class="h4 mb-0">{{ (event.organizer or 'E')[0] }}</span>
+                        </div>
+                        <div>
+                            <div class="fw-bold">{{ event.organizer or 'Event Organizer' }}</div>
+                            <div class="small text-muted">Verified Organizer</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function registerForEvent(eventId) {
+        fetch(`/events/${eventId}/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred during registration.');
+            });
+    }
+</script>
+{% endblock %}

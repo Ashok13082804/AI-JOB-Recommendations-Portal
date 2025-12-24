@@ -1254,3 +1254,53 @@ a:hover {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* ==================== ADDITIONAL PREMIUM STYLES ==================== */
+
+.lang-selector .dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.dropdown-item:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.premium-gradient {
+    background: linear-gradient(135deg, #0A66C2 0%, #004182 100%);
+}
+
+.pulse-button {
+    transition: all 0.3s ease;
+}
+
+.pulse-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(10, 102, 194, 0.4);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}

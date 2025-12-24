@@ -19,3 +19,7 @@ class Config:
     # Minimum score for auto-approval
     AUTO_APPROVE_THRESHOLD = 70
     AUTO_REJECT_THRESHOLD = 40
+    
+    # Babel configuration
+    LANGUAGES = ['en', 'hi', 'ta']
+    BABEL_DEFAULT_LOCALE = 'en'

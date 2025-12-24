@@ -7,7 +7,7 @@ import os
 import json
 
 from config import Config
-from extensions import db, login_manager
+from extensions import db, login_manager, babel
 from models import User, Skill, Experience, Education, Resume, Job, Application, Post, Comment, Like, Connection, Endorsement
 
 app = Flask(__name__)
@@ -16,6 +16,16 @@ app.config.from_object(Config)
 # Initialize extensions with app
 db.init_app(app)
 login_manager.init_app(app)
+
+def get_locale():
+    # If a user is logged in, use their preferred language
+    if current_user.is_authenticated and current_user.preferred_language:
+        return current_user.preferred_language
+    # Otherwise try to guess the language from the user accept header the browser transmits.
+    # We support en, hi, ta
+    return request.accept_languages.best_match(app.config['LANGUAGES'])
+
+babel.init_app(app, locale_selector=get_locale)
 
 # Ensure upload directories exist
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'resumes'), exist_ok=True)
@@ -32,6 +42,18 @@ def from_json(value):
         return []
 
 app.jinja_env.filters['from_json'] = from_json
+
+def nl2br(value):
+    if not value:
+        return ""
+    import markupsafe
+    return markupsafe.Markup(value.replace('\n', '<br>\n'))
+
+app.jinja_env.filters['nl2br'] = nl2br
+
+@app.context_processor
+def inject_locale():
+    return dict(get_locale=get_locale)
 
 @login_manager.user_loader
 def load_user(id):
@@ -124,6 +146,15 @@ def face_login():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+@app.route('/set_language/<lang>')
+def set_language(lang):
+    if lang in app.config['LANGUAGES']:
+        if current_user.is_authenticated:
+            current_user.preferred_language = lang
+            db.session.commit()
+        session['lang'] = lang
+    return redirect(request.referrer or url_for('index'))
 
 @app.route('/dashboard')
 @login_required
@@ -241,10 +272,14 @@ def resume_analyze():
 from modules.jobs import jobs_bp
 from modules.resume_ai import resume_bp
 from modules.social import social_bp
+from modules.tests import tests_bp
+from modules.events import events_bp
 
 app.register_blueprint(jobs_bp)
 app.register_blueprint(resume_bp)
 app.register_blueprint(social_bp)
+app.register_blueprint(tests_bp)
+app.register_blueprint(events_bp)
 
 # ==================== MAIN ====================
 

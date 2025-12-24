@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ get_locale() }}">
 
 <head>
     <meta charset="UTF-8">
@@ -46,6 +46,10 @@
                 {% endif %}
                 <li><a href="{{ url_for('social_bp.feed') }}"
                         class="{{ 'active' if request.endpoint == 'social_bp.feed' }}">Feed</a></li>
+                <li><a href="{{ url_for('tests_bp.index') }}"
+                        class="{{ 'active' if 'tests_bp.' in (request.endpoint or '') }}">Assessments</a></li>
+                <li><a href="{{ url_for('events_bp.index') }}"
+                        class="{{ 'active' if 'events_bp.' in (request.endpoint or '') }}">Events</a></li>
                 <li><a href="{{ url_for('dashboard') }}"
                         class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a></li>
                 {% endif %}
@@ -59,6 +63,21 @@
                 </a>
                 <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm">Logout</a>
                 {% else %}
+                <!-- Language Selector -->
+                <div class="lang-selector dropdown">
+                    <button class="btn btn-ghost dropdown-toggle" type="button" id="langDropdown"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-globe"></i> {{ get_locale()|upper }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="langDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('set_language', lang='en') }}">English</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('set_language', lang='hi') }}">हिन्दी (Hindi)</a>
+                        </li>
+                        <li><a class="dropdown-item" href="{{ url_for('set_language', lang='ta') }}">தமிழ் (Tamil)</a>
+                        </li>
+                    </ul>
+                </div>
+
                 <a href="{{ url_for('login') }}" class="btn btn-ghost">Login</a>
                 <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
                 {% endif %}

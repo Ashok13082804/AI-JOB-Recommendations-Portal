@@ -56,7 +56,10 @@ def jobs_list():
         query = query.filter(Job.location.ilike(f'%{location}%'))
     
     if job_type:
-        query = query.filter(Job.job_type == job_type)
+        if job_type == 'internship':
+            query = query.filter((Job.job_type == 'internship') | (Job.title.ilike('%intern%')))
+        else:
+            query = query.filter(Job.job_type == job_type)
     
     if experience:
         exp_val = int(experience) if experience.isdigit() else 0

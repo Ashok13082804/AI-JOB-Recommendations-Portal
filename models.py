@@ -15,6 +15,7 @@ class User(UserMixin, db.Model):
     profile_image = db.Column(db.String(200))
     face_encoding = db.Column(db.Text)  # JSON encoded face data
     company_name = db.Column(db.String(100))  # For employers
+    preferred_language = db.Column(db.String(10), default='en')  # 'en', 'hi', 'ta'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -25,6 +26,12 @@ class User(UserMixin, db.Model):
     posts = db.relationship('Post', backref='author', lazy=True, cascade='all, delete-orphan')
     jobs = db.relationship('Job', backref='employer', lazy=True, cascade='all, delete-orphan')
     applications = db.relationship('Application', backref='applicant', lazy=True, cascade='all, delete-orphan')
+    
+    # New relationships
+    test_results = db.relationship('PsychologicalTestResult', backref='user', lazy=True)
+    skill_test_results = db.relationship('SkillTestResult', backref='user', lazy=True)
+    event_registrations = db.relationship('EventRegistration', backref='user', lazy=True)
+    certificates = db.relationship('Certificate', backref='user', lazy=True)
 
 class Skill(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -135,3 +142,64 @@ class Endorsement(db.Model):
     skill_id = db.Column(db.Integer, db.ForeignKey('skill.id'), nullable=False)
     endorsed_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ==================== NEW MODELS ====================
+
+class PsychologicalTest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    questions_json = db.Column(db.Text, nullable=False)  # JSON list of questions
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class PsychologicalTestResult(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    test_id = db.Column(db.Integer, db.ForeignKey('psychological_test.id'), nullable=False)
+    score = db.Column(db.Integer)
+    analysis = db.Column(db.Text)  # Detailed analysis text
+    completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class SkillTest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    skill_name = db.Column(db.String(50), nullable=False)
+    level = db.Column(db.String(20))  # 'beginner', 'intermediate', 'advanced'
+    questions_json = db.Column(db.Text, nullable=False)
+    duration_minutes = db.Column(db.Integer, default=30)
+
+class SkillTestResult(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    test_id = db.Column(db.Integer, db.ForeignKey('skill_test.id'), nullable=False)
+    score = db.Column(db.Integer)
+    is_passed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Event(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    organizer = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    event_type = db.Column(db.String(50))  # 'workshop', 'webinar', 'conference', 'internship_fair'
+    is_internship = db.Column(db.Boolean, default=False)
+    location = db.Column(db.String(200))  # 'Online' or city name
+    url = db.Column(db.String(500))
+    start_date = db.Column(db.DateTime)
+    end_date = db.Column(db.DateTime)
+    image_url = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class EventRegistration(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    registered_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Certificate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    cert_type = db.Column(db.String(50))  # 'psychology', 'skill'
+    reference_id = db.Column(db.Integer)  # ID of the test result
+    title = db.Column(db.String(200))
+    file_path = db.Column(db.String(200))
+    issued_at = db.Column(db.DateTime, default=datetime.utcnow)

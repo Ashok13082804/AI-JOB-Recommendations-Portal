@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ test.skill_name }} Certification - Job Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0 glass-card">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="h2 fw-bold mb-1">{{ test.skill_name }} Certification</h1>
+                            <p class="text-muted mb-0">Level: {{ test.level|capitalize }} • {{ questions|length }}
+                                Questions</p>
+                        </div>
+                        <div class="timer-box text-center p-2 rounded-3 bg-dark text-white shadow-sm"
+                            style="min-width: 100px;">
+                            <div class="small text-uppercase opacity-75">Time Left</div>
+                            <div id="timer" class="h4 mb-0 fw-bold">30:00</div>
+                        </div>
+                    </div>
+
+                    <form action="{{ url_for('tests_bp.submit_skill_test', test_id=test.id) }}" method="POST"
+                        id="skillForm">
+                        <div class="test-questions">
+                            {% for question in questions %}
+                            <div class="question-block mb-5 p-4 rounded-4 bg-light bg-opacity-50">
+                                <h5 class="mb-4 fw-bold">{{ loop.index }}. {{ question.text }}</h5>
+                                <div class="options-list">
+                                    {% for key, text in question.options.items() %}
+                                    <div class="form-check custom-skill-option mb-2">
+                                        <input class="form-check-input" type="radio" name="q_{{ loop.index0 }}"
+                                            id="q_{{ loop.index0 }}_{{ key }}" value="{{ key }}" required>
+                                        <label class="form-check-label w-100 p-3 rounded-3 border"
+                                            for="q_{{ loop.index0 }}_{{ key }}">
+                                            <strong>{{ key }}.</strong> {{ text }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-grid mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-lg">Submit
+                                Certification Test</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simple timer logic
+    let seconds = {{ test.duration_minutes * 60 }};
+    const timerDisplay = document.getElementById('timer');
+
+    const countdown = setInterval(() => {
+        seconds--;
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+        if (seconds <= 0) {
+            clearInterval(countdown);
+            document.getElementById('skillForm').submit();
+        }
+    }, 1000);
+</script>
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 2rem;
+    }
+
+    .custom-skill-option .form-check-input {
+        display: none;
+    }
+
+    .custom-skill-option .form-check-label {
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .custom-skill-option .form-check-label:hover {
+        background: #f8f9fa;
+    }
+
+    .custom-skill-option input:checked+.form-check-label {
+        background: #e7f1ff;
+        border-color: #0d6efd !important;
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
